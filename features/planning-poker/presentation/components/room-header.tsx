@@ -3,6 +3,7 @@ import type {
   PlanningPokerRole,
   PlanningPokerRoom,
 } from "../../domain/planning-poker";
+import { ConnectionStatusIndicator } from "./connection-status-indicator";
 
 type RoomHeaderProps = {
   room: PlanningPokerRoom;
@@ -38,9 +39,9 @@ export function RoomHeader({
         <p className="mt-1 text-sm font-medium text-slate-300">
           Your role: {currentUserRole}
         </p>
-        <p className="mt-1 text-sm font-medium text-slate-300">
-          Connection: {connectionStatus}
-        </p>
+        <div className="mt-4">
+          <ConnectionStatusIndicator status={connectionStatus} />
+        </div>
       </div>
       <div className="flex flex-col gap-3 sm:items-end">
         <div className="rounded-2xl bg-black/30 px-5 py-4 text-sm text-slate-200">
