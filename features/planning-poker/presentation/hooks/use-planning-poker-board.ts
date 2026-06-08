@@ -2,18 +2,8 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
-  advanceToNextPendingStory,
   canUseFacilitatorControls,
-  choosePendingStory,
   createLocalPlanningPokerRoom,
-  joinExistingPlanningPokerRoom,
-  joinLocalPlanningPokerRoom,
-  loadPendingStories,
-  resetRoomRound,
-  revealRoomVotes,
-  selectRoomDeck,
-  updateCurrentStory,
-  voteInRoom,
 } from "../../application/planning-poker-use-cases";
 import type { PlanningPokerConnectionStatus } from "../../application/planning-poker-room-repository";
 import {
@@ -21,15 +11,11 @@ import {
   canCreateRoomWithName,
   canJoinWithPlayerName,
   canJoinWithRoomCode,
-  createPlanningPokerDeck,
   getVoteForPlayer,
-  normalizeRoomCode,
   normalizeStoryName,
-  parseCustomDeckValues,
   summarizeRevealedVotes,
   type PlanningPokerRole,
   type PlanningPokerRoom,
-  type VoteValue,
 } from "../../domain/planning-poker";
 import {
   loadLocalPlanningPokerState,
@@ -37,46 +23,16 @@ import {
   subscribeToLocalPlanningPokerState,
 } from "../../infrastructure/local-planning-poker-state";
 import { getLocalRealtimePlanningPokerRoomRepository } from "../../infrastructure/local-realtime-planning-poker-room-repository";
-
-const localPlayerIdKey = "planning-poker.player-id.v1";
+import { createPlanningPokerRoomActions } from "./planning-poker-room-actions";
+import {
+  getInitialCurrentPlayerId,
+  getInitialCurrentUserRole,
+  getServerLocalPlanningPokerState,
+  joinSharedRoom,
+  restoreLocalRoom,
+} from "./planning-poker-session-helpers";
 
 export type EntryMode = "create" | "join";
-
-function getServerLocalPlanningPokerState() {
-  return null;
-}
-
-function getInitialCurrentUserRole(): PlanningPokerRole {
-  if (typeof window === "undefined") {
-    return "participant";
-  }
-
-  return loadLocalPlanningPokerState()?.currentUserRole ?? "participant";
-}
-
-function getInitialCurrentPlayerId(): string {
-  if (typeof window === "undefined") {
-    return "you";
-  }
-
-  const localState = loadLocalPlanningPokerState();
-
-  if (localState?.playerId) {
-    return localState.playerId;
-  }
-
-  const storedPlayerId = window.sessionStorage.getItem(localPlayerIdKey);
-
-  if (storedPlayerId) {
-    return storedPlayerId;
-  }
-
-  const playerId = crypto.randomUUID();
-
-  window.sessionStorage.setItem(localPlayerIdKey, playerId);
-
-  return playerId;
-}
 
 export function usePlanningPokerBoard(initialRoomCode = "") {
   const [entryMode, setEntryMode] = useState<EntryMode>(
@@ -224,144 +180,23 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
     );
   }
 
-  async function handleCopyInviteLink() {
-    if (!activeRoom) {
-      return;
-    }
-
-    const inviteLink = `${window.location.origin}/?room=${encodeURIComponent(activeRoom.id)}`;
-
-    await navigator.clipboard.writeText(inviteLink);
-    setInviteCopied(true);
-  }
-
-  function handleVote(value: VoteValue) {
-    if (!activeRoom) {
-      return;
-    }
-
-    setRoom((currentRoom) =>
-      voteInRoom({
-        room: currentRoom ?? activeRoom,
-        playerId: currentPlayerId,
-        value,
-      }),
-    );
-  }
-
-  function handleSelectPresetDeck(kind: "fibonacci" | "t-shirt") {
-    if (!activeRoom || !canUseFacilitatorActions) {
-      return;
-    }
-
-    setCustomDeckInput(null);
-    setRoom((currentRoom) =>
-      selectRoomDeck({
-        room: currentRoom ?? activeRoom,
-        deck: createPlanningPokerDeck(kind),
-        currentUserRole,
-      }),
-    );
-  }
-
-  function handleApplyCustomDeck() {
-    if (!activeRoom || !canApplyCustomDeck || !canUseFacilitatorActions) {
-      return;
-    }
-
-    setRoom((currentRoom) =>
-      selectRoomDeck({
-        room: currentRoom ?? activeRoom,
-        deck: createPlanningPokerDeck("custom", parseCustomDeckValues(customDeckDraft)),
-        currentUserRole,
-      }),
-    );
-  }
-
-  function handleApplyStory() {
-    if (!activeRoom || !canApplyStory || !canUseFacilitatorActions) {
-      return;
-    }
-
-    setRoom((currentRoom) =>
-      updateCurrentStory({
-        room: currentRoom ?? activeRoom,
-        storyName: storyDraft,
-        currentUserRole,
-      }),
-    );
-    setStoryInput(null);
-  }
-
-  function handleLoadPendingStories() {
-    if (!activeRoom || !canLoadPendingStories || !canUseFacilitatorActions) {
-      return;
-    }
-
-    setRoom((currentRoom) =>
-      loadPendingStories({
-        room: currentRoom ?? activeRoom,
-        storiesInput: pendingStoriesInput,
-        currentUserRole,
-      }),
-    );
-    setPendingStoriesInput("");
-  }
-
-  function handleSelectPendingStory(storyName: string) {
-    if (!activeRoom || !canUseFacilitatorActions) {
-      return;
-    }
-
-    setRoom((currentRoom) =>
-      choosePendingStory({
-        room: currentRoom ?? activeRoom,
-        storyName,
-        currentUserRole,
-      }),
-    );
-  }
-
-  function handleAdvanceToNextPendingStory() {
-    if (!activeRoom || !canUseFacilitatorActions) {
-      return;
-    }
-
-    setRoom((currentRoom) =>
-      advanceToNextPendingStory({
-        room: currentRoom ?? activeRoom,
-        currentUserRole,
-      }),
-    );
-  }
-
-  function handleRevealVotes() {
-    if (!activeRoom) {
-      return;
-    }
-
-    setRoom((currentRoom) =>
-      revealRoomVotes({
-        room: currentRoom ?? activeRoom,
-        currentUserRole,
-      }),
-    );
-  }
-
-  function handleResetRound() {
-    setRoom((currentRoom) => {
-      const roomToReset = currentRoom ?? activeRoom;
-
-      if (!roomToReset || !canUseFacilitatorActions) {
-        return currentRoom;
-      }
-
-      return resetRoomRound({
-        room: roomToReset,
-        currentUserRole,
-      });
-    });
-  }
+  const roomActions = createPlanningPokerRoomActions({
+    activeRoom,
+    currentPlayerId,
+    currentUserRole,
+    canUseFacilitatorActions,
+    canApplyCustomDeck,
+    customDeckDraft,
+    canApplyStory,
+    storyDraft,
+    canLoadPendingStories,
+    pendingStoriesInput,
+    setRoom,
+    setCustomDeckInput,
+    setStoryInput,
+    setPendingStoriesInput,
+    setInviteCopied,
+  });
 
   return {
     entry: {
@@ -396,70 +231,17 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
           setCustomDeckInput,
           setStoryInput,
           setPendingStoriesInput,
-          onCopyInviteLink: handleCopyInviteLink,
-          onVote: handleVote,
-          onSelectPresetDeck: handleSelectPresetDeck,
-          onApplyCustomDeck: handleApplyCustomDeck,
-          onApplyStory: handleApplyStory,
-          onLoadPendingStories: handleLoadPendingStories,
-          onSelectPendingStory: handleSelectPendingStory,
-          onAdvanceToNextPendingStory: handleAdvanceToNextPendingStory,
-          onRevealVotes: handleRevealVotes,
-          onResetRound: handleResetRound,
+          onCopyInviteLink: roomActions.copyInviteLink,
+          onVote: roomActions.vote,
+          onSelectPresetDeck: roomActions.selectPresetDeck,
+          onApplyCustomDeck: roomActions.applyCustomDeck,
+          onApplyStory: roomActions.applyStory,
+          onLoadPendingStories: roomActions.loadStories,
+          onSelectPendingStory: roomActions.selectPendingStory,
+          onAdvanceToNextPendingStory: roomActions.advanceToNextPendingStory,
+          onRevealVotes: roomActions.revealVotes,
+          onResetRound: roomActions.resetRound,
         }
       : null,
   };
-}
-
-function restoreLocalRoom(params: {
-  roomCode: string;
-  currentPlayerId: string;
-  playerName: string;
-  voteValue?: VoteValue;
-  deck: PlanningPokerRoom["deck"];
-  currentStory: string;
-  pendingStories: PlanningPokerRoom["pendingStories"];
-  storyHistory: PlanningPokerRoom["storyHistory"];
-}): PlanningPokerRoom {
-  const restoredRoom = joinLocalPlanningPokerRoom({
-    roomCode: params.roomCode,
-    currentPlayerName: params.playerName,
-    currentPlayerId: params.currentPlayerId,
-    deck: params.deck,
-    currentStory: params.currentStory,
-    pendingStories: params.pendingStories,
-    storyHistory: params.storyHistory,
-  });
-
-  return params.voteValue
-    ? voteInRoom({
-        room: restoredRoom,
-        playerId: params.currentPlayerId,
-        value: params.voteValue,
-      })
-    : restoredRoom;
-}
-
-function joinSharedRoom(params: {
-  roomCode: string;
-  currentPlayerName: string;
-  currentPlayerId: string;
-  roomRepository: ReturnType<typeof getLocalRealtimePlanningPokerRoomRepository>;
-}): PlanningPokerRoom {
-  const normalizedRoomCode = normalizeRoomCode(params.roomCode);
-  const sharedSnapshot = params.roomRepository.getRoomSnapshot(normalizedRoomCode);
-
-  if (sharedSnapshot) {
-    return joinExistingPlanningPokerRoom({
-      room: sharedSnapshot.room,
-      currentPlayerName: params.currentPlayerName,
-      currentPlayerId: params.currentPlayerId,
-    });
-  }
-
-  return joinLocalPlanningPokerRoom({
-    roomCode: normalizedRoomCode,
-    currentPlayerName: params.currentPlayerName,
-    currentPlayerId: params.currentPlayerId,
-  });
 }
