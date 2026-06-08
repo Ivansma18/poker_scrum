@@ -22,6 +22,8 @@ export const tShirtPlanningPokerCards = [
 
 export const planningPokerDeck = fibonacciPlanningPokerCards;
 export const customDeckMaxCards = 12;
+export const highNumericDispersionThreshold = 8;
+export const highDistinctVoteDispersionThreshold = 3;
 
 export type VoteValue = string;
 export type PlanningPokerDeckKind = "fibonacci" | "t-shirt" | "custom";
@@ -131,6 +133,9 @@ export type RevealedVoteSummary = {
   average?: number;
   nonNumericValues: VoteValue[];
   dispersion: string;
+  hasMajorityTie: boolean;
+  hasHighDispersion: boolean;
+  highDispersionReason?: string;
 };
 
 export function canFacilitateRoom(role: PlanningPokerRole): boolean {
@@ -329,6 +334,8 @@ export function summarizeRevealedVotes(
       majorityValues: [],
       nonNumericValues: [],
       dispersion: "No votes revealed",
+      hasMajorityTie: false,
+      hasHighDispersion: false,
     };
   }
 
@@ -352,6 +359,7 @@ export function summarizeRevealedVotes(
   const majorityValues = Array.from(voteCounts.entries())
     .filter(([, count]) => count === highestVoteCount)
     .map(([value]) => value);
+  const hasMajorityTie = highestVoteCount > 1 && majorityValues.length > 1;
   const average =
     numericValues.length > 0
       ? roundToTwoDecimals(
@@ -360,13 +368,42 @@ export function summarizeRevealedVotes(
         )
       : undefined;
 
+  const highDispersionReason = getHighDispersionReason(
+    numericValues,
+    voteCounts.size,
+  );
+
   return {
     voteCount: room.votes.length,
     majorityValues,
     average,
     nonNumericValues: Array.from(new Set(nonNumericValues)),
     dispersion: describeVoteDispersion(numericValues, voteCounts.size),
+    hasMajorityTie,
+    hasHighDispersion: highDispersionReason !== undefined,
+    highDispersionReason,
   };
+}
+
+function getHighDispersionReason(
+  numericValues: number[],
+  distinctVoteCount: number,
+): string | undefined {
+  if (numericValues.length >= 2) {
+    const range = Math.max(...numericValues) - Math.min(...numericValues);
+
+    if (range >= highNumericDispersionThreshold) {
+      return `Numeric range is ${roundToTwoDecimals(range)}, at or above ${highNumericDispersionThreshold}.`;
+    }
+
+    return undefined;
+  }
+
+  if (distinctVoteCount >= highDistinctVoteDispersionThreshold) {
+    return `${distinctVoteCount} distinct vote values were revealed.`;
+  }
+
+  return undefined;
 }
 
 function describeVoteDispersion(

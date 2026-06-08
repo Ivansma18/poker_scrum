@@ -616,32 +616,63 @@ export function PlanningPokerBoard({
                     No votes were submitted before reveal.
                   </p>
                 ) : (
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl bg-white p-4 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Majority
-                      </p>
-                      <p className="mt-2 text-2xl font-bold text-slate-950">
-                        {voteSummary.majorityValues.join(", ")}
-                      </p>
+                  <>
+                    {voteSummary.hasMajorityTie ||
+                    voteSummary.hasHighDispersion ? (
+                      <div
+                        className="mt-4 grid gap-3"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        {voteSummary.hasMajorityTie ? (
+                          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950">
+                            <p className="font-semibold">Tie detected</p>
+                            <p className="mt-1 text-sm">
+                              Multiple values share the lead:{" "}
+                              {voteSummary.majorityValues.join(", ")}. Discuss
+                              before deciding.
+                            </p>
+                          </div>
+                        ) : null}
+                        {voteSummary.hasHighDispersion ? (
+                          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-950">
+                            <p className="font-semibold">High dispersion detected</p>
+                            <p className="mt-1 text-sm">
+                              {voteSummary.highDispersionReason} Use this as a
+                              prompt for discussion.
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-white p-4 shadow-sm">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Majority
+                        </p>
+                        <p className="mt-2 text-2xl font-bold text-slate-950">
+                          {voteSummary.majorityValues.join(", ")}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-white p-4 shadow-sm">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Average
+                        </p>
+                        <p className="mt-2 text-2xl font-bold text-slate-950">
+                          {voteSummary.average ?? "N/A"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-white p-4 shadow-sm">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Dispersion
+                        </p>
+                        <p className="mt-2 text-lg font-bold text-slate-950">
+                          {voteSummary.dispersion}
+                        </p>
+                      </div>
                     </div>
-                    <div className="rounded-2xl bg-white p-4 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Average
-                      </p>
-                      <p className="mt-2 text-2xl font-bold text-slate-950">
-                        {voteSummary.average ?? "N/A"}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-white p-4 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Dispersion
-                      </p>
-                      <p className="mt-2 text-lg font-bold text-slate-950">
-                        {voteSummary.dispersion}
-                      </p>
-                    </div>
-                  </div>
+                  </>
                 )}
 
                 {voteSummary.nonNumericValues.length > 0 ? (
