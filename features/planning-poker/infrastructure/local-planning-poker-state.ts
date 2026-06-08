@@ -3,6 +3,7 @@ import {
   isVoteValueInDeck,
   type PlanningPokerDeck,
   type PlanningPokerDeckKind,
+  type StoryHistoryEntry,
   type VoteValue,
 } from "../domain/planning-poker";
 
@@ -15,6 +16,8 @@ export type LocalPlanningPokerState = {
   roomCode: string;
   voteValue?: VoteValue;
   deck: PlanningPokerDeck;
+  currentStory: string;
+  storyHistory: StoryHistoryEntry[];
 };
 
 export function loadLocalPlanningPokerState(): LocalPlanningPokerState | null {
@@ -113,7 +116,42 @@ function parseLocalPlanningPokerState(
     roomCode: state.roomCode,
     voteValue: state.voteValue,
     deck,
+    currentStory:
+      typeof state.currentStory === "string" ? state.currentStory : "",
+    storyHistory: parseStoryHistory(state.storyHistory),
   };
+}
+
+function parseStoryHistory(value: unknown): StoryHistoryEntry[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((entry): StoryHistoryEntry[] => {
+    if (!entry || typeof entry !== "object") {
+      return [];
+    }
+
+    const storyEntry = entry as Partial<
+      Record<keyof StoryHistoryEntry, unknown>
+    >;
+
+    if (
+      typeof storyEntry.storyName !== "string" ||
+      storyEntry.storyName.trim().length === 0 ||
+      typeof storyEntry.result !== "string" ||
+      storyEntry.result.trim().length === 0
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        storyName: storyEntry.storyName,
+        result: storyEntry.result,
+      },
+    ];
+  });
 }
 
 function parsePlanningPokerDeck(value: unknown): PlanningPokerDeck | null {

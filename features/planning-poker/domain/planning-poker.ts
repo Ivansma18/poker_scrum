@@ -49,6 +49,10 @@ export function normalizeRoomCode(code: string): string {
   return code.trim().replace(/\s+/g, "").toUpperCase();
 }
 
+export function normalizeStoryName(storyName: string): string {
+  return storyName.trim().replace(/\s+/g, " ");
+}
+
 export function normalizeDeckValue(value: string): string {
   return value.trim().replace(/\s+/g, " ");
 }
@@ -115,6 +119,11 @@ export type Vote = {
   value: VoteValue;
 };
 
+export type StoryHistoryEntry = {
+  storyName: string;
+  result: string;
+};
+
 export type PlanningPokerRoom = {
   id: string;
   name: string;
@@ -122,6 +131,8 @@ export type PlanningPokerRoom = {
   votes: Vote[];
   revealed: boolean;
   deck: PlanningPokerDeck;
+  currentStory: string;
+  storyHistory: StoryHistoryEntry[];
 };
 
 export function createPlanningPokerRoom(params: {
@@ -129,6 +140,8 @@ export function createPlanningPokerRoom(params: {
   name: string;
   players: Player[];
   deck?: PlanningPokerDeck;
+  currentStory?: string;
+  storyHistory?: StoryHistoryEntry[];
 }): PlanningPokerRoom {
   return {
     id: params.id,
@@ -137,6 +150,8 @@ export function createPlanningPokerRoom(params: {
     votes: [],
     revealed: false,
     deck: params.deck ?? defaultPlanningPokerDeck,
+    currentStory: normalizeStoryName(params.currentStory ?? ""),
+    storyHistory: params.storyHistory ?? [],
   };
 }
 
@@ -227,6 +242,46 @@ export function changeRoomDeck(
     deck,
     votes: [],
     revealed: false,
+  };
+}
+
+export function changeCurrentStory(
+  room: PlanningPokerRoom,
+  storyName: string,
+): PlanningPokerRoom {
+  const normalizedStoryName = normalizeStoryName(storyName);
+
+  if (room.currentStory === normalizedStoryName) {
+    return room;
+  }
+
+  return {
+    ...room,
+    currentStory: normalizedStoryName,
+    votes: [],
+    revealed: false,
+    storyHistory: shouldStoreCurrentStoryResult(room)
+      ? [createStoryHistoryEntry(room), ...room.storyHistory]
+      : room.storyHistory,
+  };
+}
+
+function shouldStoreCurrentStoryResult(room: PlanningPokerRoom): boolean {
+  return room.currentStory.length > 0 && room.revealed && room.votes.length > 0;
+}
+
+function createStoryHistoryEntry(room: PlanningPokerRoom): StoryHistoryEntry {
+  return {
+    storyName: room.currentStory,
+    result: room.votes
+      .map((vote) => {
+        const player = room.players.find(
+          (currentPlayer) => currentPlayer.id === vote.playerId,
+        );
+
+        return `${player?.name ?? vote.playerId}: ${vote.value}`;
+      })
+      .join(", "),
   };
 }
 

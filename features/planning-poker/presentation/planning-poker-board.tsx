@@ -7,6 +7,7 @@ import {
   resetRoomRound,
   revealRoomVotes,
   selectRoomDeck,
+  updateCurrentStory,
   voteInRoom,
 } from "../application/planning-poker-use-cases";
 import {
@@ -16,6 +17,7 @@ import {
   canJoinWithRoomCode,
   createPlanningPokerDeck,
   getVoteForPlayer,
+  normalizeStoryName,
   parseCustomDeckValues,
   type PlanningPokerRoom,
   type VoteValue,
@@ -48,6 +50,7 @@ export function PlanningPokerBoard({
   const [roomCode, setRoomCode] = useState(initialRoomCode);
   const [playerName, setPlayerName] = useState("");
   const [customDeckInput, setCustomDeckInput] = useState<string | null>(null);
+  const [storyInput, setStoryInput] = useState<string | null>(null);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [room, setRoom] = useState<PlanningPokerRoom | null>(null);
   const skipNextPersistence = useRef(false);
@@ -65,6 +68,8 @@ export function PlanningPokerBoard({
         playerName: localState.playerName,
         voteValue: localState.voteValue,
         deck: localState.deck,
+        currentStory: localState.currentStory,
+        storyHistory: localState.storyHistory,
       })
     : null;
   const activeRoom = room ?? restoredRoom;
@@ -94,6 +99,8 @@ export function PlanningPokerBoard({
       roomCode: room.id,
       voteValue: currentVote?.value,
       deck: room.deck,
+      currentStory: room.currentStory,
+      storyHistory: room.storyHistory,
     });
   }, [room]);
 
@@ -230,6 +237,9 @@ export function PlanningPokerBoard({
       ? activePlanningRoom.deck.values.join(", ")
       : "");
   const canApplyCustomDeck = canCreateCustomDeck(customDeckDraft);
+  const storyDraft = storyInput ?? activePlanningRoom.currentStory;
+  const canApplyStory =
+    normalizeStoryName(storyDraft) !== activePlanningRoom.currentStory;
 
   async function handleCopyInviteLink() {
     const inviteLink = `${window.location.origin}/?room=${encodeURIComponent(activePlanningRoom.id)}`;
@@ -272,6 +282,20 @@ export function PlanningPokerBoard({
         ),
       }),
     );
+  }
+
+  function handleApplyStory() {
+    if (!canApplyStory) {
+      return;
+    }
+
+    setRoom((currentRoom) =>
+      updateCurrentStory({
+        room: currentRoom ?? activePlanningRoom,
+        storyName: storyDraft,
+      }),
+    );
+    setStoryInput(null);
   }
 
   return (
@@ -373,6 +397,47 @@ export function PlanningPokerBoard({
               </div>
             </section>
 
+            <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">Current story</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {activePlanningRoom.currentStory || "No story selected"}
+                  </p>
+                </div>
+                <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {activePlanningRoom.currentStory ? "Estimating" : "Empty"}
+                </span>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <div>
+                  <label className="block text-sm font-semibold" htmlFor="current-story">
+                    Story name or ID
+                  </label>
+                  <input
+                    id="current-story"
+                    type="text"
+                    value={storyDraft}
+                    onChange={(event) => setStoryInput(event.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                    placeholder="Example: PROJ-123 Login flow"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    Applying a different story clears the current votes.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={!canApplyStory}
+                  onClick={handleApplyStory}
+                  className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                >
+                  Apply story
+                </button>
+              </div>
+            </section>
+
             <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-2xl font-semibold">Choose your card</h2>
@@ -465,6 +530,27 @@ export function PlanningPokerBoard({
                 );
               })}
             </div>
+
+            <section className="mt-8 border-t border-white/10 pt-6">
+              <h2 className="text-2xl font-semibold">Story history</h2>
+              {activePlanningRoom.storyHistory.length === 0 ? (
+                <p className="mt-3 text-sm text-slate-300">
+                  Revealed stories will appear here after you replace them.
+                </p>
+              ) : (
+                <div className="mt-5 flex flex-col gap-3">
+                  {activePlanningRoom.storyHistory.map((entry, index) => (
+                    <div
+                      key={`${entry.storyName}-${index}`}
+                      className="rounded-2xl bg-white/10 px-4 py-3"
+                    >
+                      <p className="font-semibold">{entry.storyName}</p>
+                      <p className="mt-1 text-sm text-slate-300">{entry.result}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           </aside>
         </section>
       </section>
@@ -477,11 +563,15 @@ function restoreLocalRoom(params: {
   playerName: string;
   voteValue?: VoteValue;
   deck: PlanningPokerRoom["deck"];
+  currentStory: string;
+  storyHistory: PlanningPokerRoom["storyHistory"];
 }): PlanningPokerRoom {
   const restoredRoom = joinLocalPlanningPokerRoom({
     roomCode: params.roomCode,
     currentPlayerName: params.playerName,
     deck: params.deck,
+    currentStory: params.currentStory,
+    storyHistory: params.storyHistory,
   });
 
   return params.voteValue

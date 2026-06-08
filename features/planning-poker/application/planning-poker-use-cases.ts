@@ -3,6 +3,7 @@ import {
   canCreateRoomWithName,
   canJoinWithPlayerName,
   canJoinWithRoomCode,
+  changeCurrentStory,
   changeRoomDeck,
   createPlanningPokerRoom,
   createRoomCodeFromName,
@@ -14,6 +15,7 @@ import {
   submitVote,
   type PlanningPokerDeck,
   type PlanningPokerRoom,
+  type StoryHistoryEntry,
   type VoteValue,
 } from "../domain/planning-poker";
 
@@ -21,6 +23,8 @@ export function createLocalPlanningPokerRoom(params: {
   roomName: string;
   currentPlayerName: string;
   deck?: PlanningPokerDeck;
+  currentStory?: string;
+  storyHistory?: StoryHistoryEntry[];
 }): PlanningPokerRoom {
   if (!canCreateRoomWithName(params.roomName)) {
     throw new Error("A room name is required to create a room.");
@@ -35,6 +39,8 @@ export function createLocalPlanningPokerRoom(params: {
     name: normalizeRoomName(params.roomName),
     players: [{ id: "you", name: normalizePlayerName(params.currentPlayerName) }],
     deck: params.deck,
+    currentStory: params.currentStory,
+    storyHistory: params.storyHistory,
   });
 }
 
@@ -42,6 +48,8 @@ export function joinLocalPlanningPokerRoom(params: {
   roomCode: string;
   currentPlayerName: string;
   deck?: PlanningPokerDeck;
+  currentStory?: string;
+  storyHistory?: StoryHistoryEntry[];
 }): PlanningPokerRoom {
   if (!canJoinWithRoomCode(params.roomCode)) {
     throw new Error("A room code is required to join a room.");
@@ -57,6 +65,8 @@ export function joinLocalPlanningPokerRoom(params: {
       name: `Room ${normalizeRoomCode(params.roomCode)}`,
       players: [],
       deck: params.deck,
+      currentStory: params.currentStory,
+      storyHistory: params.storyHistory,
     }),
     { id: "you", name: normalizePlayerName(params.currentPlayerName) },
   );
@@ -86,4 +96,11 @@ export function selectRoomDeck(params: {
   deck: PlanningPokerDeck;
 }): PlanningPokerRoom {
   return changeRoomDeck(params.room, params.deck);
+}
+
+export function updateCurrentStory(params: {
+  room: PlanningPokerRoom;
+  storyName: string;
+}): PlanningPokerRoom {
+  return changeCurrentStory(params.room, params.storyName);
 }
