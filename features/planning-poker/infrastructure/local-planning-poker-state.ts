@@ -13,6 +13,7 @@ let cachedStoredValue: string | null | undefined;
 let cachedLocalState: LocalPlanningPokerState | null = null;
 
 export type LocalPlanningPokerState = {
+  playerId: string;
   playerName: string;
   roomCode: string;
   voteValue?: VoteValue;
@@ -114,6 +115,7 @@ function parseLocalPlanningPokerState(
   }
 
   return {
+    playerId: typeof state.playerId === "string" ? state.playerId : "you",
     playerName: state.playerName,
     roomCode: state.roomCode,
     voteValue: state.voteValue,

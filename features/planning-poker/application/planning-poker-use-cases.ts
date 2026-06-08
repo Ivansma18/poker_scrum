@@ -24,6 +24,7 @@ import {
 export function createLocalPlanningPokerRoom(params: {
   roomName: string;
   currentPlayerName: string;
+  currentPlayerId: string;
   deck?: PlanningPokerDeck;
   currentStory?: string;
   storyHistory?: StoryHistoryEntry[];
@@ -39,7 +40,9 @@ export function createLocalPlanningPokerRoom(params: {
   return createPlanningPokerRoom({
     id: createRoomCodeFromName(params.roomName),
     name: normalizeRoomName(params.roomName),
-    players: [{ id: "you", name: normalizePlayerName(params.currentPlayerName) }],
+    players: [
+      { id: params.currentPlayerId, name: normalizePlayerName(params.currentPlayerName) },
+    ],
     deck: params.deck,
     currentStory: params.currentStory,
     storyHistory: params.storyHistory,
@@ -49,6 +52,7 @@ export function createLocalPlanningPokerRoom(params: {
 export function joinLocalPlanningPokerRoom(params: {
   roomCode: string;
   currentPlayerName: string;
+  currentPlayerId: string;
   deck?: PlanningPokerDeck;
   currentStory?: string;
   storyHistory?: StoryHistoryEntry[];
@@ -70,8 +74,23 @@ export function joinLocalPlanningPokerRoom(params: {
       currentStory: params.currentStory,
       storyHistory: params.storyHistory,
     }),
-    { id: "you", name: normalizePlayerName(params.currentPlayerName) },
+    { id: params.currentPlayerId, name: normalizePlayerName(params.currentPlayerName) },
   );
+}
+
+export function joinExistingPlanningPokerRoom(params: {
+  room: PlanningPokerRoom;
+  currentPlayerName: string;
+  currentPlayerId: string;
+}): PlanningPokerRoom {
+  if (!canJoinWithPlayerName(params.currentPlayerName)) {
+    throw new Error("A player name is required to join the room.");
+  }
+
+  return addPlayer(params.room, {
+    id: params.currentPlayerId,
+    name: normalizePlayerName(params.currentPlayerName),
+  });
 }
 
 export function voteInRoom(params: {
