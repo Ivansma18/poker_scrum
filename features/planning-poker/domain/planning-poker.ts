@@ -7,6 +7,18 @@ export type Player = {
   name: string;
 };
 
+export function normalizePlayerName(name: string): string {
+  return name.trim().replace(/\s+/g, " ");
+}
+
+export function normalizeRoomName(name: string): string {
+  return name.trim().replace(/\s+/g, " ");
+}
+
+export function normalizeRoomCode(code: string): string {
+  return code.trim().replace(/\s+/g, "").toUpperCase();
+}
+
 export type Vote = {
   playerId: Player["id"];
   value: VoteValue;
@@ -31,6 +43,42 @@ export function createPlanningPokerRoom(params: {
     players: params.players,
     votes: [],
     revealed: false,
+  };
+}
+
+export function canJoinWithPlayerName(name: string): boolean {
+  return normalizePlayerName(name).length > 0;
+}
+
+export function canCreateRoomWithName(name: string): boolean {
+  return normalizeRoomName(name).length > 0;
+}
+
+export function canJoinWithRoomCode(code: string): boolean {
+  return normalizeRoomCode(code).length > 0;
+}
+
+export function createRoomCodeFromName(name: string): string {
+  const code = normalizeRoomName(name).replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+
+  return code.slice(0, 6) || "ROOM";
+}
+
+export function addPlayer(
+  room: PlanningPokerRoom,
+  player: Player,
+): PlanningPokerRoom {
+  const playerExists = room.players.some(
+    (currentPlayer) => currentPlayer.id === player.id,
+  );
+
+  if (playerExists) {
+    return room;
+  }
+
+  return {
+    ...room,
+    players: [...room.players, player],
   };
 }
 

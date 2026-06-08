@@ -1,5 +1,13 @@
 import {
+  addPlayer,
+  canCreateRoomWithName,
+  canJoinWithPlayerName,
+  canJoinWithRoomCode,
   createPlanningPokerRoom,
+  createRoomCodeFromName,
+  normalizePlayerName,
+  normalizeRoomCode,
+  normalizeRoomName,
   revealVotes,
   resetRound,
   submitVote,
@@ -7,17 +15,45 @@ import {
   type VoteValue,
 } from "../domain/planning-poker";
 
-export function createDemoPlanningPokerRoom(): PlanningPokerRoom {
+export function createLocalPlanningPokerRoom(params: {
+  roomName: string;
+  currentPlayerName: string;
+}): PlanningPokerRoom {
+  if (!canCreateRoomWithName(params.roomName)) {
+    throw new Error("A room name is required to create a room.");
+  }
+
+  if (!canJoinWithPlayerName(params.currentPlayerName)) {
+    throw new Error("A player name is required to join the room.");
+  }
+
   return createPlanningPokerRoom({
-    id: "demo-room",
-    name: "Sprint planning",
-    players: [
-      { id: "ana", name: "Ana" },
-      { id: "leo", name: "Leo" },
-      { id: "mia", name: "Mia" },
-      { id: "you", name: "You" },
-    ],
+    id: createRoomCodeFromName(params.roomName),
+    name: normalizeRoomName(params.roomName),
+    players: [{ id: "you", name: normalizePlayerName(params.currentPlayerName) }],
   });
+}
+
+export function joinLocalPlanningPokerRoom(params: {
+  roomCode: string;
+  currentPlayerName: string;
+}): PlanningPokerRoom {
+  if (!canJoinWithRoomCode(params.roomCode)) {
+    throw new Error("A room code is required to join a room.");
+  }
+
+  if (!canJoinWithPlayerName(params.currentPlayerName)) {
+    throw new Error("A player name is required to join the room.");
+  }
+
+  return addPlayer(
+    createPlanningPokerRoom({
+      id: normalizeRoomCode(params.roomCode),
+      name: `Room ${normalizeRoomCode(params.roomCode)}`,
+      players: [],
+    }),
+    { id: "you", name: normalizePlayerName(params.currentPlayerName) },
+  );
 }
 
 export function voteInRoom(params: {
