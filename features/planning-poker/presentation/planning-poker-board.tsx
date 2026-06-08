@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
+  canUseFacilitatorControls,
   createLocalPlanningPokerRoom,
   joinLocalPlanningPokerRoom,
   resetRoomRound,
@@ -19,6 +20,8 @@ import {
   getVoteForPlayer,
   normalizeStoryName,
   parseCustomDeckValues,
+  summarizeRevealedVotes,
+  type PlanningPokerRole,
   type PlanningPokerRoom,
   type VoteValue,
 } from "../domain/planning-poker";
@@ -30,10 +33,19 @@ import {
 } from "../infrastructure/local-planning-poker-state";
 
 const currentPlayerId = "you";
+const facilitatorPermissionMessage = "Only facilitators can use this control.";
 type EntryMode = "create" | "join";
 
 function getServerLocalPlanningPokerState() {
   return null;
+}
+
+function getInitialCurrentUserRole(): PlanningPokerRole {
+  if (typeof window === "undefined") {
+    return "participant";
+  }
+
+  return loadLocalPlanningPokerState()?.currentUserRole ?? "participant";
 }
 
 type PlanningPokerBoardProps = {
@@ -51,6 +63,9 @@ export function PlanningPokerBoard({
   const [playerName, setPlayerName] = useState("");
   const [customDeckInput, setCustomDeckInput] = useState<string | null>(null);
   const [storyInput, setStoryInput] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<PlanningPokerRole>(
+    getInitialCurrentUserRole,
+  );
   const [inviteCopied, setInviteCopied] = useState(false);
   const [room, setRoom] = useState<PlanningPokerRoom | null>(null);
   const skipNextPersistence = useRef(false);
@@ -99,10 +114,11 @@ export function PlanningPokerBoard({
       roomCode: room.id,
       voteValue: currentVote?.value,
       deck: room.deck,
+      currentUserRole,
       currentStory: room.currentStory,
       storyHistory: room.storyHistory,
     });
-  }, [room]);
+  }, [currentUserRole, room]);
 
   if (!activeRoom) {
     const canSubmitCreate =
@@ -122,6 +138,9 @@ export function PlanningPokerBoard({
               return;
             }
 
+            const nextRole = entryMode === "create" ? "facilitator" : "participant";
+
+            setCurrentUserRole(nextRole);
             setRoom(
               entryMode === "create"
                 ? createLocalPlanningPokerRoom({
@@ -230,7 +249,9 @@ export function PlanningPokerBoard({
   }
 
   const activePlanningRoom = activeRoom;
+  const canUseFacilitatorActions = canUseFacilitatorControls(currentUserRole);
   const currentVote = getVoteForPlayer(activePlanningRoom, currentPlayerId);
+  const voteSummary = summarizeRevealedVotes(activePlanningRoom);
   const customDeckDraft =
     customDeckInput ??
     (activePlanningRoom.deck.kind === "custom"
@@ -259,17 +280,22 @@ export function PlanningPokerBoard({
   }
 
   function handleSelectPresetDeck(kind: "fibonacci" | "t-shirt") {
+    if (!canUseFacilitatorActions) {
+      return;
+    }
+
     setCustomDeckInput(null);
     setRoom((currentRoom) =>
       selectRoomDeck({
         room: currentRoom ?? activePlanningRoom,
         deck: createPlanningPokerDeck(kind),
+        currentUserRole,
       }),
     );
   }
 
   function handleApplyCustomDeck() {
-    if (!canApplyCustomDeck) {
+    if (!canApplyCustomDeck || !canUseFacilitatorActions) {
       return;
     }
 
@@ -280,12 +306,13 @@ export function PlanningPokerBoard({
           "custom",
           parseCustomDeckValues(customDeckDraft),
         ),
+        currentUserRole,
       }),
     );
   }
 
   function handleApplyStory() {
-    if (!canApplyStory) {
+    if (!canApplyStory || !canUseFacilitatorActions) {
       return;
     }
 
@@ -293,6 +320,7 @@ export function PlanningPokerBoard({
       updateCurrentStory({
         room: currentRoom ?? activePlanningRoom,
         storyName: storyDraft,
+        currentUserRole,
       }),
     );
     setStoryInput(null);
@@ -315,6 +343,9 @@ export function PlanningPokerBoard({
             </p>
             <p className="mt-2 text-sm font-medium text-cyan-200">
               Room code: {activeRoom.id}
+            </p>
+            <p className="mt-1 text-sm font-medium text-slate-300">
+              Your role: {currentUserRole}
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:items-end">
@@ -347,23 +378,31 @@ export function PlanningPokerBoard({
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
+                    disabled={!canUseFacilitatorActions}
                     onClick={() => handleSelectPresetDeck("fibonacci")}
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                       activePlanningRoom.deck.kind === "fibonacci"
                         ? "bg-slate-950 text-white"
-                        : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
+                        : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
                     }`}
+                    title={
+                      canUseFacilitatorActions ? undefined : facilitatorPermissionMessage
+                    }
                   >
                     Fibonacci
                   </button>
                   <button
                     type="button"
+                    disabled={!canUseFacilitatorActions}
                     onClick={() => handleSelectPresetDeck("t-shirt")}
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                       activePlanningRoom.deck.kind === "t-shirt"
                         ? "bg-slate-950 text-white"
-                        : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
+                        : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
                     }`}
+                    title={
+                      canUseFacilitatorActions ? undefined : facilitatorPermissionMessage
+                    }
                   >
                     T-shirt sizes
                   </button>
@@ -377,9 +416,10 @@ export function PlanningPokerBoard({
                   </label>
                   <textarea
                     id="custom-deck"
+                    disabled={!canUseFacilitatorActions}
                     value={customDeckDraft}
                     onChange={(event) => setCustomDeckInput(event.target.value)}
-                    className="mt-2 min-h-20 w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                    className="mt-2 min-h-20 w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none transition disabled:bg-slate-100 disabled:text-slate-500 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                     placeholder="Example: 0, 1, 2, 3, 5, 8, ?"
                   />
                   <p className="mt-1 text-xs text-slate-500">
@@ -388,13 +428,18 @@ export function PlanningPokerBoard({
                 </div>
                 <button
                   type="button"
-                  disabled={!canApplyCustomDeck}
+                  disabled={!canApplyCustomDeck || !canUseFacilitatorActions}
                   onClick={handleApplyCustomDeck}
                   className="rounded-full bg-cyan-400 px-5 py-3 text-sm font-semibold text-cyan-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
                 >
                   Apply custom
                 </button>
               </div>
+              {!canUseFacilitatorActions ? (
+                <p className="mt-3 text-sm font-medium text-slate-500">
+                  {facilitatorPermissionMessage}
+                </p>
+              ) : null}
             </section>
 
             <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
@@ -417,10 +462,11 @@ export function PlanningPokerBoard({
                   </label>
                   <input
                     id="current-story"
+                    disabled={!canUseFacilitatorActions}
                     type="text"
                     value={storyDraft}
                     onChange={(event) => setStoryInput(event.target.value)}
-                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none transition disabled:bg-slate-100 disabled:text-slate-500 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                     placeholder="Example: PROJ-123 Login flow"
                   />
                   <p className="mt-1 text-xs text-slate-500">
@@ -429,13 +475,18 @@ export function PlanningPokerBoard({
                 </div>
                 <button
                   type="button"
-                  disabled={!canApplyStory}
+                  disabled={!canApplyStory || !canUseFacilitatorActions}
                   onClick={handleApplyStory}
                   className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
                 >
                   Apply story
                 </button>
               </div>
+              {!canUseFacilitatorActions ? (
+                <p className="mt-3 text-sm font-medium text-slate-500">
+                  {facilitatorPermissionMessage}
+                </p>
+              ) : null}
             </section>
 
             <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -472,15 +523,80 @@ export function PlanningPokerBoard({
               })}
             </div>
 
+            {voteSummary ? (
+              <section className="mt-8 rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-cyan-950">
+                      Results summary
+                    </h2>
+                    <p className="mt-1 text-sm text-cyan-900/70">
+                      Based on {voteSummary.voteCount} revealed votes.
+                    </p>
+                  </div>
+                  <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-700">
+                    Revealed
+                  </span>
+                </div>
+
+                {voteSummary.voteCount === 0 ? (
+                  <p className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm text-slate-600">
+                    No votes were submitted before reveal.
+                  </p>
+                ) : (
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl bg-white p-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Majority
+                      </p>
+                      <p className="mt-2 text-2xl font-bold text-slate-950">
+                        {voteSummary.majorityValues.join(", ")}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-white p-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Average
+                      </p>
+                      <p className="mt-2 text-2xl font-bold text-slate-950">
+                        {voteSummary.average ?? "N/A"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-white p-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Dispersion
+                      </p>
+                      <p className="mt-2 text-lg font-bold text-slate-950">
+                        {voteSummary.dispersion}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {voteSummary.nonNumericValues.length > 0 ? (
+                  <p className="mt-3 text-sm text-cyan-900/70">
+                    Non-numeric votes excluded from average:{" "}
+                    {voteSummary.nonNumericValues.join(", ")}
+                  </p>
+                ) : null}
+              </section>
+            ) : null}
+
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
                 onClick={() =>
                   setRoom((currentRoom) =>
-                    revealRoomVotes(currentRoom ?? activePlanningRoom),
+                    revealRoomVotes({
+                      room: currentRoom ?? activePlanningRoom,
+                      currentUserRole,
+                    }),
                   )
                 }
-                className="rounded-full bg-cyan-400 px-6 py-3 font-semibold text-cyan-950 transition hover:bg-cyan-300"
+                disabled={!canUseFacilitatorActions}
+                className="rounded-full bg-cyan-400 px-6 py-3 font-semibold text-cyan-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                title={
+                  canUseFacilitatorActions ? undefined : facilitatorPermissionMessage
+                }
               >
                 Reveal votes
               </button>
@@ -490,20 +606,32 @@ export function PlanningPokerBoard({
                   setRoom((currentRoom) => {
                     const roomToReset = currentRoom ?? activePlanningRoom;
 
-                    if (!roomToReset) {
+                    if (!roomToReset || !canUseFacilitatorActions) {
                       return currentRoom;
                     }
 
                     clearLocalPlanningPokerState();
                     skipNextPersistence.current = true;
-                    return resetRoomRound(roomToReset);
+                    return resetRoomRound({
+                      room: roomToReset,
+                      currentUserRole,
+                    });
                   })
                 }
-                className="rounded-full border border-slate-300 px-6 py-3 font-semibold text-slate-700 transition hover:bg-slate-100"
+                disabled={!canUseFacilitatorActions}
+                className="rounded-full border border-slate-300 px-6 py-3 font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                title={
+                  canUseFacilitatorActions ? undefined : facilitatorPermissionMessage
+                }
               >
                 Reset round
               </button>
             </div>
+            {!canUseFacilitatorActions ? (
+              <p className="mt-3 text-sm font-medium text-slate-500">
+                {facilitatorPermissionMessage}
+              </p>
+            ) : null}
           </div>
 
           <aside className="rounded-3xl border border-white/10 bg-white/10 p-5 shadow-2xl shadow-black/20 backdrop-blur sm:p-6">

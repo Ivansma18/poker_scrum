@@ -3,6 +3,7 @@ import {
   isVoteValueInDeck,
   type PlanningPokerDeck,
   type PlanningPokerDeckKind,
+  type PlanningPokerRole,
   type StoryHistoryEntry,
   type VoteValue,
 } from "../domain/planning-poker";
@@ -16,6 +17,7 @@ export type LocalPlanningPokerState = {
   roomCode: string;
   voteValue?: VoteValue;
   deck: PlanningPokerDeck;
+  currentUserRole: PlanningPokerRole;
   currentStory: string;
   storyHistory: StoryHistoryEntry[];
 };
@@ -116,6 +118,7 @@ function parseLocalPlanningPokerState(
     roomCode: state.roomCode,
     voteValue: state.voteValue,
     deck,
+    currentUserRole: parsePlanningPokerRole(state.currentUserRole),
     currentStory:
       typeof state.currentStory === "string" ? state.currentStory : "",
     storyHistory: parseStoryHistory(state.storyHistory),
@@ -152,6 +155,10 @@ function parseStoryHistory(value: unknown): StoryHistoryEntry[] {
       },
     ];
   });
+}
+
+function parsePlanningPokerRole(value: unknown): PlanningPokerRole {
+  return value === "facilitator" ? "facilitator" : "participant";
 }
 
 function parsePlanningPokerDeck(value: unknown): PlanningPokerDeck | null {

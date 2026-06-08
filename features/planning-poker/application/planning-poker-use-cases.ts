@@ -1,5 +1,6 @@
 import {
   addPlayer,
+  canFacilitateRoom,
   canCreateRoomWithName,
   canJoinWithPlayerName,
   canJoinWithRoomCode,
@@ -14,6 +15,7 @@ import {
   resetRound,
   submitVote,
   type PlanningPokerDeck,
+  type PlanningPokerRole,
   type PlanningPokerRoom,
   type StoryHistoryEntry,
   type VoteValue,
@@ -83,24 +85,54 @@ export function voteInRoom(params: {
   });
 }
 
-export function revealRoomVotes(room: PlanningPokerRoom): PlanningPokerRoom {
-  return revealVotes(room);
+export function revealRoomVotes(params: {
+  room: PlanningPokerRoom;
+  currentUserRole: PlanningPokerRole;
+}): PlanningPokerRoom {
+  if (!canFacilitateRoom(params.currentUserRole)) {
+    return params.room;
+  }
+
+  return revealVotes(params.room);
 }
 
-export function resetRoomRound(room: PlanningPokerRoom): PlanningPokerRoom {
-  return resetRound(room);
+export function resetRoomRound(params: {
+  room: PlanningPokerRoom;
+  currentUserRole: PlanningPokerRole;
+}): PlanningPokerRoom {
+  if (!canFacilitateRoom(params.currentUserRole)) {
+    return params.room;
+  }
+
+  return resetRound(params.room);
 }
 
 export function selectRoomDeck(params: {
   room: PlanningPokerRoom;
   deck: PlanningPokerDeck;
+  currentUserRole: PlanningPokerRole;
 }): PlanningPokerRoom {
+  if (!canFacilitateRoom(params.currentUserRole)) {
+    return params.room;
+  }
+
   return changeRoomDeck(params.room, params.deck);
 }
 
 export function updateCurrentStory(params: {
   room: PlanningPokerRoom;
   storyName: string;
+  currentUserRole: PlanningPokerRole;
 }): PlanningPokerRoom {
+  if (!canFacilitateRoom(params.currentUserRole)) {
+    return params.room;
+  }
+
   return changeCurrentStory(params.room, params.storyName);
+}
+
+export function canUseFacilitatorControls(
+  role: PlanningPokerRole,
+): boolean {
+  return canFacilitateRoom(role);
 }

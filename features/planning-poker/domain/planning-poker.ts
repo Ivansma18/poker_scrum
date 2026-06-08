@@ -25,6 +25,7 @@ export const customDeckMaxCards = 12;
 
 export type VoteValue = string;
 export type PlanningPokerDeckKind = "fibonacci" | "t-shirt" | "custom";
+export type PlanningPokerRole = "facilitator" | "participant";
 
 export type PlanningPokerDeck = {
   kind: PlanningPokerDeckKind;
@@ -123,6 +124,18 @@ export type StoryHistoryEntry = {
   storyName: string;
   result: string;
 };
+
+export type RevealedVoteSummary = {
+  voteCount: number;
+  majorityValues: VoteValue[];
+  average?: number;
+  nonNumericValues: VoteValue[];
+  dispersion: string;
+};
+
+export function canFacilitateRoom(role: PlanningPokerRole): boolean {
+  return role === "facilitator";
+}
 
 export type PlanningPokerRoom = {
   id: string;
@@ -301,4 +314,78 @@ export function getVoteForPlayer(
   playerId: Player["id"],
 ): Vote | undefined {
   return room.votes.find((vote) => vote.playerId === playerId);
+}
+
+export function summarizeRevealedVotes(
+  room: PlanningPokerRoom,
+): RevealedVoteSummary | null {
+  if (!room.revealed) {
+    return null;
+  }
+
+  if (room.votes.length === 0) {
+    return {
+      voteCount: 0,
+      majorityValues: [],
+      nonNumericValues: [],
+      dispersion: "No votes revealed",
+    };
+  }
+
+  const numericValues: number[] = [];
+  const nonNumericValues: VoteValue[] = [];
+  const voteCounts = new Map<VoteValue, number>();
+
+  for (const vote of room.votes) {
+    const numericValue = Number(vote.value);
+
+    if (Number.isFinite(numericValue) && vote.value.trim() !== "") {
+      numericValues.push(numericValue);
+    } else {
+      nonNumericValues.push(vote.value);
+    }
+
+    voteCounts.set(vote.value, (voteCounts.get(vote.value) ?? 0) + 1);
+  }
+
+  const highestVoteCount = Math.max(...voteCounts.values());
+  const majorityValues = Array.from(voteCounts.entries())
+    .filter(([, count]) => count === highestVoteCount)
+    .map(([value]) => value);
+  const average =
+    numericValues.length > 0
+      ? roundToTwoDecimals(
+          numericValues.reduce((total, value) => total + value, 0) /
+            numericValues.length,
+        )
+      : undefined;
+
+  return {
+    voteCount: room.votes.length,
+    majorityValues,
+    average,
+    nonNumericValues: Array.from(new Set(nonNumericValues)),
+    dispersion: describeVoteDispersion(numericValues, voteCounts.size),
+  };
+}
+
+function describeVoteDispersion(
+  numericValues: number[],
+  distinctVoteCount: number,
+): string {
+  if (numericValues.length >= 2) {
+    const range = Math.max(...numericValues) - Math.min(...numericValues);
+
+    return `Numeric range: ${roundToTwoDecimals(range)}`;
+  }
+
+  if (distinctVoteCount <= 1) {
+    return "High agreement";
+  }
+
+  return `${distinctVoteCount} distinct vote values`;
+}
+
+function roundToTwoDecimals(value: number): number {
+  return Math.round(value * 100) / 100;
 }
