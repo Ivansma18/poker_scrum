@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   createLocalPlanningPokerRoom,
   joinLocalPlanningPokerRoom,
@@ -17,9 +17,19 @@ import {
   type PlanningPokerRoom,
   type VoteValue,
 } from "../domain/planning-poker";
+import {
+  clearLocalPlanningPokerState,
+  loadLocalPlanningPokerState,
+  saveLocalPlanningPokerState,
+  subscribeToLocalPlanningPokerState,
+} from "../infrastructure/local-planning-poker-state";
 
 const currentPlayerId = "you";
 type EntryMode = "create" | "join";
+
+function getServerLocalPlanningPokerState() {
+  return null;
+}
 
 type PlanningPokerBoardProps = {
   initialRoomCode?: string;
@@ -36,8 +46,52 @@ export function PlanningPokerBoard({
   const [playerName, setPlayerName] = useState("");
   const [inviteCopied, setInviteCopied] = useState(false);
   const [room, setRoom] = useState<PlanningPokerRoom | null>(null);
+  const skipNextPersistence = useRef(false);
+  const localState = useSyncExternalStore(
+    subscribeToLocalPlanningPokerState,
+    loadLocalPlanningPokerState,
+    getServerLocalPlanningPokerState,
+  );
+  const restoredRoomCode = localState
+    ? initialRoomCode || localState.roomCode
+    : initialRoomCode;
+  const restoredRoom = localState
+    ? restoreLocalRoom({
+        roomCode: restoredRoomCode,
+        playerName: localState.playerName,
+        voteValue: localState.voteValue,
+      })
+    : null;
+  const activeRoom = room ?? restoredRoom;
 
-  if (!room) {
+  useEffect(() => {
+    if (!room) {
+      return;
+    }
+
+    if (skipNextPersistence.current) {
+      skipNextPersistence.current = false;
+      return;
+    }
+
+    const currentPlayer = room.players.find(
+      (player) => player.id === currentPlayerId,
+    );
+
+    if (!currentPlayer) {
+      return;
+    }
+
+    const currentVote = getVoteForPlayer(room, currentPlayerId);
+
+    saveLocalPlanningPokerState({
+      playerName: currentPlayer.name,
+      roomCode: room.id,
+      voteValue: currentVote?.value,
+    });
+  }, [room]);
+
+  if (!activeRoom) {
     const canSubmitCreate =
       canCreateRoomWithName(roomName) && canJoinWithPlayerName(playerName);
     const canSubmitJoin =
@@ -162,14 +216,11 @@ export function PlanningPokerBoard({
     );
   }
 
-  const currentVote = getVoteForPlayer(room, currentPlayerId);
+  const activePlanningRoom = activeRoom;
+  const currentVote = getVoteForPlayer(activePlanningRoom, currentPlayerId);
 
   async function handleCopyInviteLink() {
-    if (!room) {
-      return;
-    }
-
-    const inviteLink = `${window.location.origin}/?room=${encodeURIComponent(room.id)}`;
+    const inviteLink = `${window.location.origin}/?room=${encodeURIComponent(activePlanningRoom.id)}`;
 
     await navigator.clipboard.writeText(inviteLink);
     setInviteCopied(true);
@@ -177,13 +228,11 @@ export function PlanningPokerBoard({
 
   function handleVote(value: VoteValue) {
     setRoom((currentRoom) =>
-      currentRoom
-        ? voteInRoom({
-            room: currentRoom,
-            playerId: currentPlayerId,
-            value,
-          })
-        : currentRoom,
+      voteInRoom({
+        room: currentRoom ?? activePlanningRoom,
+        playerId: currentPlayerId,
+        value,
+      }),
     );
   }
 
@@ -196,20 +245,20 @@ export function PlanningPokerBoard({
               Planning poker
             </p>
             <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-              {room.name}
+              {activeRoom.name}
             </h1>
             <p className="mt-3 max-w-2xl text-base text-slate-300">
               Vote privately, reveal estimates together, then reset the round for
               the next story.
             </p>
             <p className="mt-2 text-sm font-medium text-cyan-200">
-              Room code: {room.id}
+              Room code: {activeRoom.id}
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:items-end">
             <div className="rounded-2xl bg-black/30 px-5 py-4 text-sm text-slate-200">
               <span className="block text-2xl font-semibold text-white">
-                {room.votes.length}/{room.players.length}
+                {activeRoom.votes.length}/{activeRoom.players.length}
               </span>
               votes submitted
             </div>
@@ -233,7 +282,7 @@ export function PlanningPokerBoard({
                 </p>
               </div>
               <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
-                {room.revealed ? "Revealed" : "Voting"}
+                {activeRoom.revealed ? "Revealed" : "Voting"}
               </span>
             </div>
 
@@ -245,7 +294,7 @@ export function PlanningPokerBoard({
                   <button
                     key={card}
                     type="button"
-                    disabled={room.revealed}
+                    disabled={activeRoom.revealed}
                     onClick={() => handleVote(card)}
                     className={`aspect-[3/4] rounded-2xl border text-2xl font-bold transition enabled:hover:-translate-y-1 enabled:hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 ${
                       selected
@@ -264,7 +313,7 @@ export function PlanningPokerBoard({
                 type="button"
                 onClick={() =>
                   setRoom((currentRoom) =>
-                    currentRoom ? revealRoomVotes(currentRoom) : currentRoom,
+                    revealRoomVotes(currentRoom ?? activePlanningRoom),
                   )
                 }
                 className="rounded-full bg-cyan-400 px-6 py-3 font-semibold text-cyan-950 transition hover:bg-cyan-300"
@@ -274,9 +323,17 @@ export function PlanningPokerBoard({
               <button
                 type="button"
                 onClick={() =>
-                  setRoom((currentRoom) =>
-                    currentRoom ? resetRoomRound(currentRoom) : currentRoom,
-                  )
+                  setRoom((currentRoom) => {
+                    const roomToReset = currentRoom ?? activePlanningRoom;
+
+                    if (!roomToReset) {
+                      return currentRoom;
+                    }
+
+                    clearLocalPlanningPokerState();
+                    skipNextPersistence.current = true;
+                    return resetRoomRound(roomToReset);
+                  })
                 }
                 className="rounded-full border border-slate-300 px-6 py-3 font-semibold text-slate-700 transition hover:bg-slate-100"
               >
@@ -288,8 +345,8 @@ export function PlanningPokerBoard({
           <aside className="rounded-3xl border border-white/10 bg-white/10 p-5 shadow-2xl shadow-black/20 backdrop-blur sm:p-6">
             <h2 className="text-2xl font-semibold">Players</h2>
             <div className="mt-5 flex flex-col gap-3">
-              {room.players.map((player) => {
-                const vote = getVoteForPlayer(room, player.id);
+              {activeRoom.players.map((player) => {
+                const vote = getVoteForPlayer(activeRoom, player.id);
 
                 return (
                   <div
@@ -303,7 +360,7 @@ export function PlanningPokerBoard({
                       </p>
                     </div>
                     <div className="flex h-12 w-10 items-center justify-center rounded-xl bg-white text-lg font-bold text-slate-950">
-                      {room.revealed ? vote?.value ?? "-" : vote ? "ok" : "-"}
+                      {activeRoom.revealed ? vote?.value ?? "-" : vote ? "ok" : "-"}
                     </div>
                   </div>
                 );
@@ -314,4 +371,23 @@ export function PlanningPokerBoard({
       </section>
     </main>
   );
+}
+
+function restoreLocalRoom(params: {
+  roomCode: string;
+  playerName: string;
+  voteValue?: VoteValue;
+}): PlanningPokerRoom {
+  const restoredRoom = joinLocalPlanningPokerRoom({
+    roomCode: params.roomCode,
+    currentPlayerName: params.playerName,
+  });
+
+  return params.voteValue
+    ? voteInRoom({
+        room: restoredRoom,
+        playerId: currentPlayerId,
+        value: params.voteValue,
+      })
+    : restoredRoom;
 }
