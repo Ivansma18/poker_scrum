@@ -96,6 +96,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
     : false;
   const canLoadPendingStories = pendingStoriesInput.trim().length > 0;
   const pendingStories = activeRoom?.pendingStories ?? [];
+  const activeRoomId = activeRoom?.id;
 
   useEffect(() => {
     if (!room) {
@@ -126,13 +127,13 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
   }, [currentPlayerId, currentUserRole, room]);
 
   useEffect(() => {
-    if (!activeRoom) {
+    if (!activeRoomId) {
       return;
     }
 
-    return roomRepository.subscribeToRoom(activeRoom.id, {
+    return roomRepository.subscribeToRoom(activeRoomId, {
       onSnapshot: (snapshot) => {
-        if (snapshot.room.id !== activeRoom.id) {
+        if (snapshot.room.id !== activeRoomId) {
           return;
         }
 
@@ -141,7 +142,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
       },
       onConnectionStatusChange: setConnectionStatus,
     });
-  }, [activeRoom, roomRepository]);
+  }, [activeRoomId, roomRepository]);
 
   useEffect(() => {
     if (!room) {

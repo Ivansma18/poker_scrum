@@ -17,3 +17,18 @@
 - Define repository interfaces before infrastructure implementations when persistence or realtime is introduced.
 - Prefer pure domain functions/entities so planning-poker rules can be tested without Next.js.
 - Allowed dependency flow is `presentation -> application -> domain`, `infrastructure -> domain/application contracts`, and `app -> presentation/application wiring`.
+
+## Frontend Architecture Defaults
+
+- Build UI from small, focused components with one clear responsibility.
+- Keep route/page/container components thin; they should compose feature components and pass data/actions.
+- Avoid large React components. If a component mixes responsibilities or becomes hard to scan, split it into named files.
+- Extract reusable UI patterns into generic components when they appear more than once or represent a clear concept.
+- Prefer composition over prop-heavy or boolean-heavy component APIs.
+- Move stateful orchestration, effects, subscriptions, and screen-level actions into custom hooks.
+- Keep hooks focused; split persistence, realtime, forms, derived state, and action helpers when a hook grows too broad.
+- Keep React components mostly presentational: receive props, render UI, and call callbacks.
+- Do not embed business rules in React components; keep rules in `domain` or `application`.
+- Treat components over roughly 150 lines and hooks over roughly 200 lines as refactor candidates, not hard limits.
+- Refactor proactively toward small, reusable, decoupled files when changing frontend code.
+- Validate frontend refactors with `npm run lint` and `npm run build`.
