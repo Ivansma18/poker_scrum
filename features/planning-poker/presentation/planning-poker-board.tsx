@@ -6,14 +6,17 @@ import {
   joinLocalPlanningPokerRoom,
   resetRoomRound,
   revealRoomVotes,
+  selectRoomDeck,
   voteInRoom,
 } from "../application/planning-poker-use-cases";
 import {
+  canCreateCustomDeck,
   canCreateRoomWithName,
   canJoinWithPlayerName,
   canJoinWithRoomCode,
+  createPlanningPokerDeck,
   getVoteForPlayer,
-  planningPokerDeck,
+  parseCustomDeckValues,
   type PlanningPokerRoom,
   type VoteValue,
 } from "../domain/planning-poker";
@@ -44,6 +47,7 @@ export function PlanningPokerBoard({
   const [roomName, setRoomName] = useState("");
   const [roomCode, setRoomCode] = useState(initialRoomCode);
   const [playerName, setPlayerName] = useState("");
+  const [customDeckInput, setCustomDeckInput] = useState<string | null>(null);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [room, setRoom] = useState<PlanningPokerRoom | null>(null);
   const skipNextPersistence = useRef(false);
@@ -60,6 +64,7 @@ export function PlanningPokerBoard({
         roomCode: restoredRoomCode,
         playerName: localState.playerName,
         voteValue: localState.voteValue,
+        deck: localState.deck,
       })
     : null;
   const activeRoom = room ?? restoredRoom;
@@ -88,6 +93,7 @@ export function PlanningPokerBoard({
       playerName: currentPlayer.name,
       roomCode: room.id,
       voteValue: currentVote?.value,
+      deck: room.deck,
     });
   }, [room]);
 
@@ -218,6 +224,12 @@ export function PlanningPokerBoard({
 
   const activePlanningRoom = activeRoom;
   const currentVote = getVoteForPlayer(activePlanningRoom, currentPlayerId);
+  const customDeckDraft =
+    customDeckInput ??
+    (activePlanningRoom.deck.kind === "custom"
+      ? activePlanningRoom.deck.values.join(", ")
+      : "");
+  const canApplyCustomDeck = canCreateCustomDeck(customDeckDraft);
 
   async function handleCopyInviteLink() {
     const inviteLink = `${window.location.origin}/?room=${encodeURIComponent(activePlanningRoom.id)}`;
@@ -232,6 +244,32 @@ export function PlanningPokerBoard({
         room: currentRoom ?? activePlanningRoom,
         playerId: currentPlayerId,
         value,
+      }),
+    );
+  }
+
+  function handleSelectPresetDeck(kind: "fibonacci" | "t-shirt") {
+    setCustomDeckInput(null);
+    setRoom((currentRoom) =>
+      selectRoomDeck({
+        room: currentRoom ?? activePlanningRoom,
+        deck: createPlanningPokerDeck(kind),
+      }),
+    );
+  }
+
+  function handleApplyCustomDeck() {
+    if (!canApplyCustomDeck) {
+      return;
+    }
+
+    setRoom((currentRoom) =>
+      selectRoomDeck({
+        room: currentRoom ?? activePlanningRoom,
+        deck: createPlanningPokerDeck(
+          "custom",
+          parseCustomDeckValues(customDeckDraft),
+        ),
       }),
     );
   }
@@ -274,7 +312,68 @@ export function PlanningPokerBoard({
 
         <section className="grid gap-8 lg:grid-cols-[1fr_360px]">
           <div className="rounded-3xl border border-white/10 bg-white p-5 text-slate-950 shadow-2xl shadow-black/20 sm:p-6">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">Estimation deck</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Active deck: {activePlanningRoom.deck.name}. Changing decks resets the round.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPresetDeck("fibonacci")}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      activePlanningRoom.deck.kind === "fibonacci"
+                        ? "bg-slate-950 text-white"
+                        : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    Fibonacci
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPresetDeck("t-shirt")}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      activePlanningRoom.deck.kind === "t-shirt"
+                        ? "bg-slate-950 text-white"
+                        : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    T-shirt sizes
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <div>
+                  <label className="block text-sm font-semibold" htmlFor="custom-deck">
+                    Custom deck
+                  </label>
+                  <textarea
+                    id="custom-deck"
+                    value={customDeckDraft}
+                    onChange={(event) => setCustomDeckInput(event.target.value)}
+                    className="mt-2 min-h-20 w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                    placeholder="Example: 0, 1, 2, 3, 5, 8, ?"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    Use commas or line breaks. Duplicates are removed; up to 12 cards are kept.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={!canApplyCustomDeck}
+                  onClick={handleApplyCustomDeck}
+                  className="rounded-full bg-cyan-400 px-5 py-3 text-sm font-semibold text-cyan-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                >
+                  Apply custom
+                </button>
+              </div>
+            </section>
+
+            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-2xl font-semibold">Choose your card</h2>
                 <p className="text-sm text-slate-500">
@@ -287,7 +386,7 @@ export function PlanningPokerBoard({
             </div>
 
             <div className="mt-8 grid grid-cols-3 gap-3 sm:grid-cols-5">
-              {planningPokerDeck.map((card) => {
+              {activePlanningRoom.deck.values.map((card) => {
                 const selected = currentVote?.value === card;
 
                 return (
@@ -377,10 +476,12 @@ function restoreLocalRoom(params: {
   roomCode: string;
   playerName: string;
   voteValue?: VoteValue;
+  deck: PlanningPokerRoom["deck"];
 }): PlanningPokerRoom {
   const restoredRoom = joinLocalPlanningPokerRoom({
     roomCode: params.roomCode,
     currentPlayerName: params.playerName,
+    deck: params.deck,
   });
 
   return params.voteValue

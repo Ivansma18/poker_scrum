@@ -3,6 +3,7 @@ import {
   canCreateRoomWithName,
   canJoinWithPlayerName,
   canJoinWithRoomCode,
+  changeRoomDeck,
   createPlanningPokerRoom,
   createRoomCodeFromName,
   normalizePlayerName,
@@ -11,6 +12,7 @@ import {
   revealVotes,
   resetRound,
   submitVote,
+  type PlanningPokerDeck,
   type PlanningPokerRoom,
   type VoteValue,
 } from "../domain/planning-poker";
@@ -18,6 +20,7 @@ import {
 export function createLocalPlanningPokerRoom(params: {
   roomName: string;
   currentPlayerName: string;
+  deck?: PlanningPokerDeck;
 }): PlanningPokerRoom {
   if (!canCreateRoomWithName(params.roomName)) {
     throw new Error("A room name is required to create a room.");
@@ -31,12 +34,14 @@ export function createLocalPlanningPokerRoom(params: {
     id: createRoomCodeFromName(params.roomName),
     name: normalizeRoomName(params.roomName),
     players: [{ id: "you", name: normalizePlayerName(params.currentPlayerName) }],
+    deck: params.deck,
   });
 }
 
 export function joinLocalPlanningPokerRoom(params: {
   roomCode: string;
   currentPlayerName: string;
+  deck?: PlanningPokerDeck;
 }): PlanningPokerRoom {
   if (!canJoinWithRoomCode(params.roomCode)) {
     throw new Error("A room code is required to join a room.");
@@ -51,6 +56,7 @@ export function joinLocalPlanningPokerRoom(params: {
       id: normalizeRoomCode(params.roomCode),
       name: `Room ${normalizeRoomCode(params.roomCode)}`,
       players: [],
+      deck: params.deck,
     }),
     { id: "you", name: normalizePlayerName(params.currentPlayerName) },
   );
@@ -73,4 +79,11 @@ export function revealRoomVotes(room: PlanningPokerRoom): PlanningPokerRoom {
 
 export function resetRoomRound(room: PlanningPokerRoom): PlanningPokerRoom {
   return resetRound(room);
+}
+
+export function selectRoomDeck(params: {
+  room: PlanningPokerRoom;
+  deck: PlanningPokerDeck;
+}): PlanningPokerRoom {
+  return changeRoomDeck(params.room, params.deck);
 }

@@ -1,5 +1,8 @@
 import {
-  planningPokerDeck,
+  createPlanningPokerDeck,
+  isVoteValueInDeck,
+  type PlanningPokerDeck,
+  type PlanningPokerDeckKind,
   type VoteValue,
 } from "../domain/planning-poker";
 
@@ -11,6 +14,7 @@ export type LocalPlanningPokerState = {
   playerName: string;
   roomCode: string;
   voteValue?: VoteValue;
+  deck: PlanningPokerDeck;
 };
 
 export function loadLocalPlanningPokerState(): LocalPlanningPokerState | null {
@@ -29,15 +33,16 @@ export function loadLocalPlanningPokerState(): LocalPlanningPokerState | null {
 
   try {
     const parsedValue: unknown = JSON.parse(storedValue);
+    const localState = parseLocalPlanningPokerState(parsedValue);
 
-    if (!isLocalPlanningPokerState(parsedValue)) {
+    if (!localState) {
       clearLocalPlanningPokerState();
       cachedLocalState = null;
       return null;
     }
 
-    cachedLocalState = parsedValue;
-    return parsedValue;
+    cachedLocalState = localState;
+    return localState;
   } catch {
     clearLocalPlanningPokerState();
     cachedLocalState = null;
@@ -75,24 +80,69 @@ export function subscribeToLocalPlanningPokerState(
   return () => window.removeEventListener("storage", handleStorageEvent);
 }
 
-function isLocalPlanningPokerState(
+function parseLocalPlanningPokerState(
   value: unknown,
-): value is LocalPlanningPokerState {
+): LocalPlanningPokerState | null {
   if (!value || typeof value !== "object") {
-    return false;
+    return null;
   }
 
   const state = value as Partial<Record<keyof LocalPlanningPokerState, unknown>>;
+  const deck = parsePlanningPokerDeck(state.deck);
 
-  return (
-    typeof state.playerName === "string" &&
-    state.playerName.trim().length > 0 &&
-    typeof state.roomCode === "string" &&
-    state.roomCode.trim().length > 0 &&
-    (state.voteValue === undefined || isVoteValue(state.voteValue))
-  );
+  if (
+    typeof state.playerName !== "string" ||
+    state.playerName.trim().length === 0 ||
+    typeof state.roomCode !== "string" ||
+    state.roomCode.trim().length === 0 ||
+    !deck
+  ) {
+    return null;
+  }
+
+  if (
+    state.voteValue !== undefined &&
+    (typeof state.voteValue !== "string" ||
+      !isVoteValueInDeck(deck, state.voteValue))
+  ) {
+    return null;
+  }
+
+  return {
+    playerName: state.playerName,
+    roomCode: state.roomCode,
+    voteValue: state.voteValue,
+    deck,
+  };
 }
 
-function isVoteValue(value: unknown): value is VoteValue {
-  return planningPokerDeck.some((card) => card === value);
+function parsePlanningPokerDeck(value: unknown): PlanningPokerDeck | null {
+  if (!value || typeof value !== "object") {
+    return createPlanningPokerDeck("fibonacci");
+  }
+
+  const deck = value as Partial<Record<keyof PlanningPokerDeck, unknown>>;
+
+  if (!isPlanningPokerDeckKind(deck.kind)) {
+    return null;
+  }
+
+  if (deck.kind === "custom") {
+    if (!Array.isArray(deck.values)) {
+      return null;
+    }
+
+    return createPlanningPokerDeck(
+      "custom",
+      deck.values.filter((card): card is string => typeof card === "string"),
+    );
+  }
+
+  return createPlanningPokerDeck(deck.kind);
+}
+
+function isPlanningPokerDeckKind(
+  value: unknown,
+): value is PlanningPokerDeckKind {
+  return value === "fibonacci" || value === "t-shirt" || value === "custom";
 }
