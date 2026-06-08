@@ -2,10 +2,13 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
+  advanceToNextPendingStory,
   canUseFacilitatorControls,
+  choosePendingStory,
   createLocalPlanningPokerRoom,
   joinExistingPlanningPokerRoom,
   joinLocalPlanningPokerRoom,
+  loadPendingStories,
   resetRoomRound,
   revealRoomVotes,
   selectRoomDeck,
@@ -91,6 +94,7 @@ export function PlanningPokerBoard({
   const [currentPlayerId] = useState(getInitialCurrentPlayerId);
   const [customDeckInput, setCustomDeckInput] = useState<string | null>(null);
   const [storyInput, setStoryInput] = useState<string | null>(null);
+  const [pendingStoriesInput, setPendingStoriesInput] = useState("");
   const [connectionStatus, setConnectionStatus] =
     useState<PlanningPokerConnectionStatus>("disconnected");
   const [currentUserRole, setCurrentUserRole] = useState<PlanningPokerRole>(
@@ -116,6 +120,7 @@ export function PlanningPokerBoard({
         voteValue: localState.voteValue,
         deck: localState.deck,
         currentStory: localState.currentStory,
+        pendingStories: localState.pendingStories,
         storyHistory: localState.storyHistory,
       })
     : null;
@@ -144,6 +149,7 @@ export function PlanningPokerBoard({
       deck: room.deck,
       currentUserRole,
       currentStory: room.currentStory,
+      pendingStories: room.pendingStories ?? [],
       storyHistory: room.storyHistory,
     });
   }, [currentPlayerId, currentUserRole, room]);
@@ -323,6 +329,8 @@ export function PlanningPokerBoard({
   const storyDraft = storyInput ?? activePlanningRoom.currentStory;
   const canApplyStory =
     normalizeStoryName(storyDraft) !== activePlanningRoom.currentStory;
+  const canLoadPendingStories = pendingStoriesInput.trim().length > 0;
+  const pendingStories = activePlanningRoom.pendingStories ?? [];
 
   async function handleCopyInviteLink() {
     const inviteLink = `${window.location.origin}/?room=${encodeURIComponent(activePlanningRoom.id)}`;
@@ -386,6 +394,48 @@ export function PlanningPokerBoard({
       }),
     );
     setStoryInput(null);
+  }
+
+  function handleLoadPendingStories() {
+    if (!canLoadPendingStories || !canUseFacilitatorActions) {
+      return;
+    }
+
+    setRoom((currentRoom) =>
+      loadPendingStories({
+        room: currentRoom ?? activePlanningRoom,
+        storiesInput: pendingStoriesInput,
+        currentUserRole,
+      }),
+    );
+    setPendingStoriesInput("");
+  }
+
+  function handleSelectPendingStory(storyName: string) {
+    if (!canUseFacilitatorActions) {
+      return;
+    }
+
+    setRoom((currentRoom) =>
+      choosePendingStory({
+        room: currentRoom ?? activePlanningRoom,
+        storyName,
+        currentUserRole,
+      }),
+    );
+  }
+
+  function handleAdvanceToNextPendingStory() {
+    if (!canUseFacilitatorActions) {
+      return;
+    }
+
+    setRoom((currentRoom) =>
+      advanceToNextPendingStory({
+        room: currentRoom ?? activePlanningRoom,
+        currentUserRole,
+      }),
+    );
   }
 
   return (
@@ -547,6 +597,81 @@ export function PlanningPokerBoard({
                   Apply story
                 </button>
               </div>
+              {!canUseFacilitatorActions ? (
+                <p className="mt-3 text-sm font-medium text-slate-500">
+                  {facilitatorPermissionMessage}
+                </p>
+              ) : null}
+            </section>
+
+            <section className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">Pending stories</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Load stories, then estimate them one by one.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={
+                    pendingStories.length === 0 ||
+                    !canUseFacilitatorActions
+                  }
+                  onClick={handleAdvanceToNextPendingStory}
+                  className="rounded-full bg-slate-950 px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                >
+                  Next story
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <div>
+                  <label className="block text-sm font-semibold" htmlFor="pending-stories">
+                    Add stories
+                  </label>
+                  <textarea
+                    id="pending-stories"
+                    disabled={!canUseFacilitatorActions}
+                    value={pendingStoriesInput}
+                    onChange={(event) => setPendingStoriesInput(event.target.value)}
+                    className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none transition disabled:bg-slate-100 disabled:text-slate-500 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                    placeholder={"PROJ-123 Login flow\nPROJ-124 Checkout"}
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    One story per line. Exact duplicates are ignored.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={!canLoadPendingStories || !canUseFacilitatorActions}
+                  onClick={handleLoadPendingStories}
+                  className="rounded-full bg-cyan-400 px-5 py-3 text-sm font-semibold text-cyan-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                >
+                  Load stories
+                </button>
+              </div>
+
+              {pendingStories.length === 0 ? (
+                <p className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm text-slate-500">
+                  No pending stories loaded.
+                </p>
+              ) : (
+                <div className="mt-4 flex flex-col gap-2">
+                  {pendingStories.map((story) => (
+                    <button
+                      key={story}
+                      type="button"
+                      disabled={!canUseFacilitatorActions}
+                      onClick={() => handleSelectPendingStory(story)}
+                      className="rounded-2xl bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                    >
+                      {story}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {!canUseFacilitatorActions ? (
                 <p className="mt-3 text-sm font-medium text-slate-500">
                   {facilitatorPermissionMessage}
@@ -800,6 +925,7 @@ function restoreLocalRoom(params: {
   voteValue?: VoteValue;
   deck: PlanningPokerRoom["deck"];
   currentStory: string;
+  pendingStories: PlanningPokerRoom["pendingStories"];
   storyHistory: PlanningPokerRoom["storyHistory"];
 }): PlanningPokerRoom {
   const restoredRoom = joinLocalPlanningPokerRoom({
@@ -808,6 +934,7 @@ function restoreLocalRoom(params: {
     currentPlayerId: params.currentPlayerId,
     deck: params.deck,
     currentStory: params.currentStory,
+    pendingStories: params.pendingStories,
     storyHistory: params.storyHistory,
   });
 

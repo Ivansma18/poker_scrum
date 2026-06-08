@@ -1,5 +1,6 @@
 import {
   addPlayer,
+  addPendingStories,
   canFacilitateRoom,
   canCreateRoomWithName,
   canJoinWithPlayerName,
@@ -11,8 +12,11 @@ import {
   normalizePlayerName,
   normalizeRoomCode,
   normalizeRoomName,
+  parsePendingStories,
   revealVotes,
   resetRound,
+  selectNextPendingStory,
+  selectPendingStory,
   submitVote,
   type PlanningPokerDeck,
   type PlanningPokerRole,
@@ -27,6 +31,7 @@ export function createLocalPlanningPokerRoom(params: {
   currentPlayerId: string;
   deck?: PlanningPokerDeck;
   currentStory?: string;
+  pendingStories?: string[];
   storyHistory?: StoryHistoryEntry[];
 }): PlanningPokerRoom {
   if (!canCreateRoomWithName(params.roomName)) {
@@ -45,6 +50,7 @@ export function createLocalPlanningPokerRoom(params: {
     ],
     deck: params.deck,
     currentStory: params.currentStory,
+    pendingStories: params.pendingStories,
     storyHistory: params.storyHistory,
   });
 }
@@ -55,6 +61,7 @@ export function joinLocalPlanningPokerRoom(params: {
   currentPlayerId: string;
   deck?: PlanningPokerDeck;
   currentStory?: string;
+  pendingStories?: string[];
   storyHistory?: StoryHistoryEntry[];
 }): PlanningPokerRoom {
   if (!canJoinWithRoomCode(params.roomCode)) {
@@ -72,6 +79,7 @@ export function joinLocalPlanningPokerRoom(params: {
       players: [],
       deck: params.deck,
       currentStory: params.currentStory,
+      pendingStories: params.pendingStories,
       storyHistory: params.storyHistory,
     }),
     { id: params.currentPlayerId, name: normalizePlayerName(params.currentPlayerName) },
@@ -87,7 +95,7 @@ export function joinExistingPlanningPokerRoom(params: {
     throw new Error("A player name is required to join the room.");
   }
 
-  return addPlayer(params.room, {
+  return addPlayer({ ...params.room, pendingStories: params.room.pendingStories ?? [] }, {
     id: params.currentPlayerId,
     name: normalizePlayerName(params.currentPlayerName),
   });
@@ -148,6 +156,41 @@ export function updateCurrentStory(params: {
   }
 
   return changeCurrentStory(params.room, params.storyName);
+}
+
+export function loadPendingStories(params: {
+  room: PlanningPokerRoom;
+  storiesInput: string;
+  currentUserRole: PlanningPokerRole;
+}): PlanningPokerRoom {
+  if (!canFacilitateRoom(params.currentUserRole)) {
+    return params.room;
+  }
+
+  return addPendingStories(params.room, parsePendingStories(params.storiesInput));
+}
+
+export function choosePendingStory(params: {
+  room: PlanningPokerRoom;
+  storyName: string;
+  currentUserRole: PlanningPokerRole;
+}): PlanningPokerRoom {
+  if (!canFacilitateRoom(params.currentUserRole)) {
+    return params.room;
+  }
+
+  return selectPendingStory(params.room, params.storyName);
+}
+
+export function advanceToNextPendingStory(params: {
+  room: PlanningPokerRoom;
+  currentUserRole: PlanningPokerRole;
+}): PlanningPokerRoom {
+  if (!canFacilitateRoom(params.currentUserRole)) {
+    return params.room;
+  }
+
+  return selectNextPendingStory(params.room);
 }
 
 export function canUseFacilitatorControls(

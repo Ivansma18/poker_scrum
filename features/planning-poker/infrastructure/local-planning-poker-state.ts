@@ -1,6 +1,7 @@
 import {
   createPlanningPokerDeck,
   isVoteValueInDeck,
+  normalizeStoryName,
   type PlanningPokerDeck,
   type PlanningPokerDeckKind,
   type PlanningPokerRole,
@@ -20,6 +21,7 @@ export type LocalPlanningPokerState = {
   deck: PlanningPokerDeck;
   currentUserRole: PlanningPokerRole;
   currentStory: string;
+  pendingStories: string[];
   storyHistory: StoryHistoryEntry[];
 };
 
@@ -123,8 +125,24 @@ function parseLocalPlanningPokerState(
     currentUserRole: parsePlanningPokerRole(state.currentUserRole),
     currentStory:
       typeof state.currentStory === "string" ? state.currentStory : "",
+    pendingStories: parsePendingStories(state.pendingStories),
     storyHistory: parseStoryHistory(state.storyHistory),
   };
+}
+
+function parsePendingStories(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      value
+        .filter((story): story is string => typeof story === "string")
+        .map(normalizeStoryName)
+        .filter((story) => story.length > 0),
+    ),
+  );
 }
 
 function parseStoryHistory(value: unknown): StoryHistoryEntry[] {

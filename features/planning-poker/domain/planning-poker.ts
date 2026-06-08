@@ -56,6 +56,15 @@ export function normalizeStoryName(storyName: string): string {
   return storyName.trim().replace(/\s+/g, " ");
 }
 
+export function parsePendingStories(input: string): string[] {
+  const stories = input
+    .split("\n")
+    .map(normalizeStoryName)
+    .filter((storyName) => storyName.length > 0);
+
+  return Array.from(new Set(stories));
+}
+
 export function normalizeDeckValue(value: string): string {
   return value.trim().replace(/\s+/g, " ");
 }
@@ -152,6 +161,7 @@ export type PlanningPokerRoom = {
   revealed: boolean;
   deck: PlanningPokerDeck;
   currentStory: string;
+  pendingStories: string[];
   storyHistory: StoryHistoryEntry[];
 };
 
@@ -161,6 +171,7 @@ export function createPlanningPokerRoom(params: {
   players: Player[];
   deck?: PlanningPokerDeck;
   currentStory?: string;
+  pendingStories?: string[];
   storyHistory?: StoryHistoryEntry[];
 }): PlanningPokerRoom {
   return {
@@ -171,6 +182,7 @@ export function createPlanningPokerRoom(params: {
     revealed: false,
     deck: params.deck ?? defaultPlanningPokerDeck,
     currentStory: normalizeStoryName(params.currentStory ?? ""),
+    pendingStories: normalizePendingStories(params.pendingStories ?? []),
     storyHistory: params.storyHistory ?? [],
   };
 }
@@ -242,13 +254,18 @@ export function revealVotes(room: PlanningPokerRoom): PlanningPokerRoom {
 }
 
 export function resetRound(room: PlanningPokerRoom): PlanningPokerRoom {
+  const storyHistory = shouldStoreCurrentStoryResult(room)
+    ? [createStoryHistoryEntry(room), ...room.storyHistory]
+    : room.storyHistory;
+
   return {
     ...room,
     votes: [],
     revealed: false,
-    storyHistory: shouldStoreCurrentStoryResult(room)
-      ? [createStoryHistoryEntry(room), ...room.storyHistory]
-      : room.storyHistory,
+    pendingStories: shouldStoreCurrentStoryResult(room)
+      ? removePendingStory(getPendingStories(room), room.currentStory)
+      : getPendingStories(room),
+    storyHistory,
   };
 }
 
@@ -273,6 +290,7 @@ export function changeCurrentStory(
   storyName: string,
 ): PlanningPokerRoom {
   const normalizedStoryName = normalizeStoryName(storyName);
+  const shouldStoreRound = shouldStoreCurrentStoryResult(room);
 
   if (room.currentStory === normalizedStoryName) {
     return room;
@@ -283,10 +301,58 @@ export function changeCurrentStory(
     currentStory: normalizedStoryName,
     votes: [],
     revealed: false,
-    storyHistory: shouldStoreCurrentStoryResult(room)
+    pendingStories: shouldStoreRound
+      ? removePendingStory(getPendingStories(room), room.currentStory)
+      : getPendingStories(room),
+    storyHistory: shouldStoreRound
       ? [createStoryHistoryEntry(room), ...room.storyHistory]
       : room.storyHistory,
   };
+}
+
+export function addPendingStories(
+  room: PlanningPokerRoom,
+  stories: string[],
+): PlanningPokerRoom {
+  return {
+    ...room,
+    pendingStories: normalizePendingStories([...getPendingStories(room), ...stories]),
+  };
+}
+
+export function selectPendingStory(
+  room: PlanningPokerRoom,
+  storyName: string,
+): PlanningPokerRoom {
+  const normalizedStoryName = normalizeStoryName(storyName);
+
+  if (!getPendingStories(room).includes(normalizedStoryName)) {
+    return room;
+  }
+
+  return changeCurrentStory(room, normalizedStoryName);
+}
+
+export function selectNextPendingStory(room: PlanningPokerRoom): PlanningPokerRoom {
+  const nextStory =
+    getPendingStories(room).find((story) => story !== room.currentStory) ??
+    getPendingStories(room)[0];
+
+  return nextStory ? selectPendingStory(room, nextStory) : room;
+}
+
+function normalizePendingStories(stories: string[]): string[] {
+  return Array.from(new Set(stories.map(normalizeStoryName).filter(Boolean)));
+}
+
+function getPendingStories(room: PlanningPokerRoom): string[] {
+  return room.pendingStories ?? [];
+}
+
+function removePendingStory(stories: string[], storyName: string): string[] {
+  const normalizedStoryName = normalizeStoryName(storyName);
+
+  return stories.filter((story) => story !== normalizedStoryName);
 }
 
 function shouldStoreCurrentStoryResult(room: PlanningPokerRoom): boolean {
