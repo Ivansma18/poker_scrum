@@ -154,6 +154,14 @@ function parseStoryHistory(value: unknown): StoryHistoryEntry[] {
       {
         storyName: storyEntry.storyName,
         result: storyEntry.result,
+        deckName:
+          typeof storyEntry.deckName === "string"
+            ? storyEntry.deckName
+            : "Unknown deck",
+        recordedAt:
+          typeof storyEntry.recordedAt === "string"
+            ? storyEntry.recordedAt
+            : new Date().toISOString(),
       },
     ];
   });

@@ -28,7 +28,6 @@ import {
   type VoteValue,
 } from "../domain/planning-poker";
 import {
-  clearLocalPlanningPokerState,
   loadLocalPlanningPokerState,
   saveLocalPlanningPokerState,
   subscribeToLocalPlanningPokerState,
@@ -99,7 +98,6 @@ export function PlanningPokerBoard({
   );
   const [inviteCopied, setInviteCopied] = useState(false);
   const [room, setRoom] = useState<PlanningPokerRoom | null>(null);
-  const skipNextPersistence = useRef(false);
   const skipNextRoomPublish = useRef(false);
   const roomRepository = getLocalRealtimePlanningPokerRoomRepository();
   const localState = useSyncExternalStore(
@@ -125,11 +123,6 @@ export function PlanningPokerBoard({
 
   useEffect(() => {
     if (!room) {
-      return;
-    }
-
-    if (skipNextPersistence.current) {
-      skipNextPersistence.current = false;
       return;
     }
 
@@ -713,8 +706,6 @@ export function PlanningPokerBoard({
                       return currentRoom;
                     }
 
-                    clearLocalPlanningPokerState();
-                    skipNextPersistence.current = true;
                     return resetRoomRound({
                       room: roomToReset,
                       currentUserRole,
@@ -763,10 +754,10 @@ export function PlanningPokerBoard({
             </div>
 
             <section className="mt-8 border-t border-white/10 pt-6">
-              <h2 className="text-2xl font-semibold">Story history</h2>
+              <h2 className="text-2xl font-semibold">Round history</h2>
               {activePlanningRoom.storyHistory.length === 0 ? (
                 <p className="mt-3 text-sm text-slate-300">
-                  Revealed stories will appear here after you replace them.
+                  Revealed rounds will appear here after you replace the story or reset.
                 </p>
               ) : (
                 <div className="mt-5 flex flex-col gap-3">
@@ -777,6 +768,9 @@ export function PlanningPokerBoard({
                     >
                       <p className="font-semibold">{entry.storyName}</p>
                       <p className="mt-1 text-sm text-slate-300">{entry.result}</p>
+                      <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                        {entry.deckName} - {formatHistoryDate(entry.recordedAt)}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -787,6 +781,16 @@ export function PlanningPokerBoard({
       </section>
     </main>
   );
+}
+
+function formatHistoryDate(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown time";
+  }
+
+  return date.toLocaleString();
 }
 
 function restoreLocalRoom(params: {

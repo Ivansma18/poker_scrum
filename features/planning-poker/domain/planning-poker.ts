@@ -125,6 +125,8 @@ export type Vote = {
 export type StoryHistoryEntry = {
   storyName: string;
   result: string;
+  deckName: string;
+  recordedAt: string;
 };
 
 export type RevealedVoteSummary = {
@@ -244,6 +246,9 @@ export function resetRound(room: PlanningPokerRoom): PlanningPokerRoom {
     ...room,
     votes: [],
     revealed: false,
+    storyHistory: shouldStoreCurrentStoryResult(room)
+      ? [createStoryHistoryEntry(room), ...room.storyHistory]
+      : room.storyHistory,
   };
 }
 
@@ -291,6 +296,8 @@ function shouldStoreCurrentStoryResult(room: PlanningPokerRoom): boolean {
 function createStoryHistoryEntry(room: PlanningPokerRoom): StoryHistoryEntry {
   return {
     storyName: room.currentStory,
+    deckName: room.deck.name,
+    recordedAt: new Date().toISOString(),
     result: room.votes
       .map((vote) => {
         const player = room.players.find(
