@@ -36,6 +36,7 @@ export function PlanningPokerBoard({
       currentUserRole={session.currentUserRole}
       connectionStatus={session.connectionStatus}
       inviteCopied={session.inviteCopied}
+      isLeaveRoomDialogOpen={session.isLeaveRoomDialogOpen}
       canUseFacilitatorActions={session.canUseFacilitatorActions}
       currentVote={session.currentVote}
       voteSummary={session.voteSummary}
@@ -50,6 +51,9 @@ export function PlanningPokerBoard({
       onStoryChange={session.setStoryInput}
       onPendingStoriesChange={session.setPendingStoriesInput}
       onCopyInviteLink={session.onCopyInviteLink}
+      onRequestLeaveRoom={() => session.setIsLeaveRoomDialogOpen(true)}
+      onCancelLeaveRoom={() => session.setIsLeaveRoomDialogOpen(false)}
+      onConfirmLeaveRoom={session.onConfirmLeaveRoom}
       onVote={session.onVote}
       onSelectPresetDeck={session.onSelectPresetDeck}
       onApplyCustomDeck={session.onApplyCustomDeck}

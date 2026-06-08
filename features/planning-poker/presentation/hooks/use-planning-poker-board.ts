@@ -18,6 +18,7 @@ import {
   type PlanningPokerRoom,
 } from "../../domain/planning-poker";
 import {
+  clearLocalPlanningPokerState,
   loadLocalPlanningPokerState,
   saveLocalPlanningPokerState,
   subscribeToLocalPlanningPokerState,
@@ -51,6 +52,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
     getInitialCurrentUserRole,
   );
   const [inviteCopied, setInviteCopied] = useState(false);
+  const [isLeaveRoomDialogOpen, setIsLeaveRoomDialogOpen] = useState(false);
   const [room, setRoom] = useState<PlanningPokerRoom | null>(null);
   const skipNextRoomPublish = useRef(false);
   const roomRepository = getLocalRealtimePlanningPokerRoomRepository();
@@ -192,6 +194,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
     storyDraft,
     canLoadPendingStories,
     pendingStoriesInput,
+    roomRepository,
     setRoom,
     setCustomDeckInput,
     setStoryInput,
@@ -219,6 +222,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
           currentUserRole,
           connectionStatus,
           inviteCopied,
+          isLeaveRoomDialogOpen,
           canUseFacilitatorActions,
           currentVote,
           voteSummary,
@@ -232,6 +236,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
           setCustomDeckInput,
           setStoryInput,
           setPendingStoriesInput,
+          setIsLeaveRoomDialogOpen,
           onCopyInviteLink: roomActions.copyInviteLink,
           onVote: roomActions.vote,
           onSelectPresetDeck: roomActions.selectPresetDeck,
@@ -242,6 +247,12 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
           onAdvanceToNextPendingStory: roomActions.advanceToNextPendingStory,
           onRevealVotes: roomActions.revealVotes,
           onResetRound: roomActions.resetRound,
+          onConfirmLeaveRoom: () => {
+            roomActions.leaveRoom();
+            clearLocalPlanningPokerState();
+            setIsLeaveRoomDialogOpen(false);
+            setRoom(null);
+          },
         }
       : null,
   };

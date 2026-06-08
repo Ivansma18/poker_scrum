@@ -7,6 +7,7 @@ import type {
   VoteValue,
 } from "../../domain/planning-poker";
 import { CurrentStoryPanel } from "./current-story-panel";
+import { ConfirmationDialog } from "./confirmation-dialog";
 import { DeckSelector } from "./deck-selector";
 import { FacilitatorActions } from "./facilitator-actions";
 import { PendingStoriesPanel } from "./pending-stories-panel";
@@ -20,6 +21,7 @@ type PlanningPokerRoomViewProps = {
   currentUserRole: PlanningPokerRole;
   connectionStatus: PlanningPokerConnectionStatus;
   inviteCopied: boolean;
+  isLeaveRoomDialogOpen: boolean;
   canUseFacilitatorActions: boolean;
   currentVote?: Vote;
   voteSummary: RevealedVoteSummary | null;
@@ -34,6 +36,9 @@ type PlanningPokerRoomViewProps = {
   onStoryChange: (value: string) => void;
   onPendingStoriesChange: (value: string) => void;
   onCopyInviteLink: () => void;
+  onRequestLeaveRoom: () => void;
+  onCancelLeaveRoom: () => void;
+  onConfirmLeaveRoom: () => void;
   onVote: (value: VoteValue) => void;
   onSelectPresetDeck: (kind: "fibonacci" | "t-shirt") => void;
   onApplyCustomDeck: () => void;
@@ -50,6 +55,7 @@ export function PlanningPokerRoomView({
   currentUserRole,
   connectionStatus,
   inviteCopied,
+  isLeaveRoomDialogOpen,
   canUseFacilitatorActions,
   currentVote,
   voteSummary,
@@ -64,6 +70,9 @@ export function PlanningPokerRoomView({
   onStoryChange,
   onPendingStoriesChange,
   onCopyInviteLink,
+  onRequestLeaveRoom,
+  onCancelLeaveRoom,
+  onConfirmLeaveRoom,
   onVote,
   onSelectPresetDeck,
   onApplyCustomDeck,
@@ -83,6 +92,7 @@ export function PlanningPokerRoomView({
           connectionStatus={connectionStatus}
           inviteCopied={inviteCopied}
           onCopyInviteLink={onCopyInviteLink}
+          onRequestLeaveRoom={onRequestLeaveRoom}
         />
 
         <section className="grid gap-8 lg:grid-cols-[1fr_360px]">
@@ -126,6 +136,14 @@ export function PlanningPokerRoomView({
           <PlayersSidebar room={room} />
         </section>
       </section>
+      <ConfirmationDialog
+        open={isLeaveRoomDialogOpen}
+        title="Leave room?"
+        description="You will be removed from the active players list and your current vote will be cleared for this room."
+        confirmLabel="Leave room"
+        onCancel={onCancelLeaveRoom}
+        onConfirm={onConfirmLeaveRoom}
+      />
     </main>
   );
 }

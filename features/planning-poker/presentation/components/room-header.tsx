@@ -11,6 +11,7 @@ type RoomHeaderProps = {
   connectionStatus: PlanningPokerConnectionStatus;
   inviteCopied: boolean;
   onCopyInviteLink: () => void;
+  onRequestLeaveRoom: () => void;
 };
 
 export function RoomHeader({
@@ -19,6 +20,7 @@ export function RoomHeader({
   connectionStatus,
   inviteCopied,
   onCopyInviteLink,
+  onRequestLeaveRoom,
 }: RoomHeaderProps) {
   return (
     <header className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl shadow-black/20 backdrop-blur sm:flex-row sm:items-end sm:justify-between">
@@ -56,6 +58,13 @@ export function RoomHeader({
           className="rounded-full border border-cyan-200/50 px-5 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-200 hover:text-cyan-950"
         >
           {inviteCopied ? "Invite link copied" : "Copy invite link"}
+        </button>
+        <button
+          type="button"
+          onClick={onRequestLeaveRoom}
+          className="rounded-full border border-rose-200/50 px-5 py-2 text-sm font-semibold text-rose-100 transition hover:bg-rose-200 hover:text-rose-950"
+        >
+          Leave room
         </button>
       </div>
     </header>

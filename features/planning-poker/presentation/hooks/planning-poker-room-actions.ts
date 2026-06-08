@@ -1,6 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
+import type { PlanningPokerRoomRepository } from "../../application/planning-poker-room-repository";
 import {
   advanceToNextPendingStory,
+  leavePlanningPokerRoom,
   choosePendingStory,
   loadPendingStories,
   resetRoomRound,
@@ -28,6 +30,7 @@ type PlanningPokerRoomActionsParams = {
   storyDraft: string;
   canLoadPendingStories: boolean;
   pendingStoriesInput: string;
+  roomRepository: PlanningPokerRoomRepository;
   setRoom: Dispatch<SetStateAction<PlanningPokerRoom | null>>;
   setCustomDeckInput: Dispatch<SetStateAction<string | null>>;
   setStoryInput: Dispatch<SetStateAction<string | null>>;
@@ -46,6 +49,7 @@ export function createPlanningPokerRoomActions({
   storyDraft,
   canLoadPendingStories,
   pendingStoriesInput,
+  roomRepository,
   setRoom,
   setCustomDeckInput,
   setStoryInput,
@@ -194,6 +198,19 @@ export function createPlanningPokerRoomActions({
     });
   }
 
+  function leaveRoom() {
+    if (!activeRoom) {
+      return;
+    }
+
+    const nextRoom = leavePlanningPokerRoom({
+      room: activeRoom,
+      playerId: currentPlayerId,
+    });
+
+    roomRepository.publishRoom(nextRoom);
+  }
+
   return {
     copyInviteLink,
     vote,
@@ -205,5 +222,6 @@ export function createPlanningPokerRoomActions({
     advanceToNextPendingStory: advanceToNextPendingStoryAction,
     revealVotes,
     resetRound,
+    leaveRoom,
   };
 }

@@ -223,6 +223,17 @@ export function addPlayer(
   };
 }
 
+export function removePlayer(
+  room: PlanningPokerRoom,
+  playerId: Player["id"],
+): PlanningPokerRoom {
+  return {
+    ...room,
+    players: room.players.filter((player) => player.id !== playerId),
+    votes: room.votes.filter((vote) => vote.playerId !== playerId),
+  };
+}
+
 export function submitVote(
   room: PlanningPokerRoom,
   vote: Vote,

@@ -13,6 +13,7 @@ import {
   normalizeRoomCode,
   normalizeRoomName,
   parsePendingStories,
+  removePlayer,
   revealVotes,
   resetRound,
   selectNextPendingStory,
@@ -110,6 +111,13 @@ export function voteInRoom(params: {
     playerId: params.playerId,
     value: params.value,
   });
+}
+
+export function leavePlanningPokerRoom(params: {
+  room: PlanningPokerRoom;
+  playerId: string;
+}): PlanningPokerRoom {
+  return removePlayer(params.room, params.playerId);
 }
 
 export function revealRoomVotes(params: {
