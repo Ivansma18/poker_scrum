@@ -70,10 +70,7 @@ class LocalRealtimePlanningPokerRoomRepository
         return;
       }
 
-      subscription.onSnapshot({
-        room: message.room,
-        updatedAt: message.updatedAt,
-      });
+        subscription.onSnapshot(normalizeRoomSnapshot(message));
     }
 
     function handleOffline() {
@@ -137,7 +134,7 @@ function readStoredSnapshot(
   try {
     const parsedValue: unknown = JSON.parse(storedValue);
 
-    return isRoomSnapshot(parsedValue) ? parsedValue : null;
+    return isRoomSnapshot(parsedValue) ? normalizeRoomSnapshot(parsedValue) : null;
   } catch {
     return null;
   }
@@ -160,4 +157,18 @@ function isRoomSnapshot(value: unknown): value is PlanningPokerRoomSnapshot {
     typeof snapshot.room === "object" &&
     typeof snapshot.room.id === "string"
   );
+}
+
+function normalizeRoomSnapshot(
+  snapshot: PlanningPokerRoomSnapshot,
+): PlanningPokerRoomSnapshot {
+  return {
+    ...snapshot,
+    room: {
+      ...snapshot.room,
+      pendingStories: snapshot.room.pendingStories ?? [],
+      spectators: snapshot.room.spectators ?? [],
+      storyHistory: snapshot.room.storyHistory ?? [],
+    },
+  };
 }

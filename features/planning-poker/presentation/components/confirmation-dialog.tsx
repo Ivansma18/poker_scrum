@@ -23,7 +23,7 @@ export function ConfirmationDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-6 py-8 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm sm:px-6"
       role="presentation"
       onMouseDown={onCancel}
     >
@@ -31,28 +31,28 @@ export function ConfirmationDialog({
         aria-modal="true"
         aria-labelledby="confirmation-dialog-title"
         aria-describedby="confirmation-dialog-description"
-        className="w-full max-w-md rounded-3xl border border-white/10 bg-white p-6 text-slate-950 shadow-2xl shadow-black/40"
+        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#141c2e] p-5 shadow-2xl sm:max-w-md sm:p-6"
         role="dialog"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <h2 id="confirmation-dialog-title" className="text-2xl font-bold">
+        <h2 id="confirmation-dialog-title" className="text-xl font-bold text-white sm:text-2xl">
           {title}
         </h2>
-        <p id="confirmation-dialog-description" className="mt-3 text-sm text-slate-600">
+        <p id="confirmation-dialog-description" className="mt-2 text-sm text-slate-400 sm:mt-3">
           {description}
         </p>
-        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <div className="mt-5 flex flex-col-reverse gap-2 sm:mt-6 sm:flex-row sm:justify-end sm:gap-3">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-5 py-3 text-sm font-semibold text-slate-300 transition-all hover:bg-white/[0.08] hover:text-white touch-target sm:w-auto"
           >
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400"
+            className="w-full rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-5 py-3 text-sm font-semibold text-white transition-all hover:from-rose-400 hover:to-rose-500 touch-target sm:w-auto"
             autoFocus
           >
             {confirmLabel}

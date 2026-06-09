@@ -20,8 +20,10 @@ export function PlanningPokerBoard({
         roomName={entry.roomName}
         roomCode={entry.roomCode}
         playerName={entry.playerName}
+        joinAs={entry.joinAs}
         canSubmit={entry.canSubmit}
         onEntryModeChange={entry.setEntryMode}
+        onJoinAsChange={entry.setJoinAs}
         onRoomNameChange={entry.setRoomName}
         onRoomCodeChange={entry.setRoomCode}
         onPlayerNameChange={entry.setPlayerName}
@@ -34,6 +36,7 @@ export function PlanningPokerBoard({
     <PlanningPokerRoomView
       room={session.room}
       currentUserRole={session.currentUserRole}
+      isSpectator={session.isSpectator}
       connectionStatus={session.connectionStatus}
       inviteCopied={session.inviteCopied}
       isLeaveRoomDialogOpen={session.isLeaveRoomDialogOpen}

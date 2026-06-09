@@ -27,7 +27,7 @@ export const highDistinctVoteDispersionThreshold = 3;
 
 export type VoteValue = string;
 export type PlanningPokerDeckKind = "fibonacci" | "t-shirt" | "custom";
-export type PlanningPokerRole = "facilitator" | "participant";
+export type PlanningPokerRole = "facilitator" | "participant" | "spectator";
 
 export type PlanningPokerDeck = {
   kind: PlanningPokerDeckKind;
@@ -39,6 +39,8 @@ export type Player = {
   id: string;
   name: string;
 };
+
+export type Spectator = Player;
 
 export function normalizePlayerName(name: string): string {
   return name.trim().replace(/\s+/g, " ");
@@ -157,6 +159,7 @@ export type PlanningPokerRoom = {
   id: string;
   name: string;
   players: Player[];
+  spectators: Spectator[];
   votes: Vote[];
   revealed: boolean;
   deck: PlanningPokerDeck;
@@ -169,6 +172,7 @@ export function createPlanningPokerRoom(params: {
   id: string;
   name: string;
   players: Player[];
+  spectators?: Spectator[];
   deck?: PlanningPokerDeck;
   currentStory?: string;
   pendingStories?: string[];
@@ -178,6 +182,7 @@ export function createPlanningPokerRoom(params: {
     id: params.id,
     name: params.name,
     players: params.players,
+    spectators: normalizePeople(params.spectators ?? []),
     votes: [],
     revealed: false,
     deck: params.deck ?? defaultPlanningPokerDeck,
@@ -220,6 +225,29 @@ export function addPlayer(
   return {
     ...room,
     players: [...room.players, player],
+    spectators: getSpectators(room).filter(
+      (spectator) => spectator.id !== player.id,
+    ),
+  };
+}
+
+export function addSpectator(
+  room: PlanningPokerRoom,
+  spectator: Spectator,
+): PlanningPokerRoom {
+  const spectatorExists = getSpectators(room).some(
+    (currentSpectator) => currentSpectator.id === spectator.id,
+  );
+
+  if (spectatorExists) {
+    return ensureRoomCollections(room);
+  }
+
+  return {
+    ...room,
+    players: room.players.filter((player) => player.id !== spectator.id),
+    spectators: [...getSpectators(room), spectator],
+    votes: room.votes.filter((vote) => vote.playerId !== spectator.id),
   };
 }
 
@@ -230,8 +258,28 @@ export function removePlayer(
   return {
     ...room,
     players: room.players.filter((player) => player.id !== playerId),
+    spectators: getSpectators(room),
     votes: room.votes.filter((vote) => vote.playerId !== playerId),
   };
+}
+
+export function removeSpectator(
+  room: PlanningPokerRoom,
+  spectatorId: Spectator["id"],
+): PlanningPokerRoom {
+  return {
+    ...room,
+    spectators: getSpectators(room).filter(
+      (spectator) => spectator.id !== spectatorId,
+    ),
+  };
+}
+
+export function removeRoomMember(
+  room: PlanningPokerRoom,
+  memberId: Player["id"],
+): PlanningPokerRoom {
+  return removeSpectator(removePlayer(room, memberId), memberId);
 }
 
 export function submitVote(
@@ -356,8 +404,35 @@ function normalizePendingStories(stories: string[]): string[] {
   return Array.from(new Set(stories.map(normalizeStoryName).filter(Boolean)));
 }
 
+function normalizePeople<TPerson extends Player>(people: TPerson[]): TPerson[] {
+  const peopleById = new Map<string, TPerson>();
+
+  for (const person of people) {
+    peopleById.set(person.id, {
+      ...person,
+      name: normalizePlayerName(person.name),
+    });
+  }
+
+  return Array.from(peopleById.values()).filter(
+    (person) => person.id.length > 0 && person.name.length > 0,
+  );
+}
+
+function ensureRoomCollections(room: PlanningPokerRoom): PlanningPokerRoom {
+  return {
+    ...room,
+    pendingStories: getPendingStories(room),
+    spectators: getSpectators(room),
+  };
+}
+
 function getPendingStories(room: PlanningPokerRoom): string[] {
   return room.pendingStories ?? [];
+}
+
+export function getSpectators(room: PlanningPokerRoom): Spectator[] {
+  return room.spectators ?? [];
 }
 
 function removePendingStory(stories: string[], storyName: string): string[] {

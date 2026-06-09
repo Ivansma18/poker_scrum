@@ -9,7 +9,7 @@ export function FacilitatorPermissionNotice({
   canUseFacilitatorActions,
 }: FacilitatorPermissionNoticeProps) {
   return canUseFacilitatorActions ? null : (
-    <p className="mt-3 text-sm font-medium text-slate-500">
+    <p className="mt-2 text-[10px] font-medium text-slate-600 sm:text-xs">
       {facilitatorPermissionMessage}
     </p>
   );

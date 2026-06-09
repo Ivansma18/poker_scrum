@@ -1,6 +1,8 @@
 import {
   joinExistingPlanningPokerRoom,
+  joinExistingPlanningPokerRoomAsSpectator,
   joinLocalPlanningPokerRoom,
+  joinLocalPlanningPokerRoomAsSpectator,
   voteInRoom,
 } from "../../application/planning-poker-use-cases";
 import {
@@ -58,8 +60,22 @@ export function restoreLocalRoom(params: {
   deck: PlanningPokerRoom["deck"];
   currentStory: string;
   pendingStories: PlanningPokerRoom["pendingStories"];
+  spectators: PlanningPokerRoom["spectators"];
   storyHistory: PlanningPokerRoom["storyHistory"];
+  currentUserRole: PlanningPokerRole;
 }): PlanningPokerRoom {
+  if (params.currentUserRole === "spectator") {
+    return joinLocalPlanningPokerRoomAsSpectator({
+      roomCode: params.roomCode,
+      currentSpectatorName: params.playerName,
+      currentSpectatorId: params.currentPlayerId,
+      deck: params.deck,
+      currentStory: params.currentStory,
+      pendingStories: params.pendingStories,
+      storyHistory: params.storyHistory,
+    });
+  }
+
   const restoredRoom = joinLocalPlanningPokerRoom({
     roomCode: params.roomCode,
     currentPlayerName: params.playerName,
@@ -83,16 +99,33 @@ export function joinSharedRoom(params: {
   roomCode: string;
   currentPlayerName: string;
   currentPlayerId: string;
+  joinAs: "participant" | "spectator";
   roomRepository: ReturnType<typeof getLocalRealtimePlanningPokerRoomRepository>;
 }): PlanningPokerRoom {
   const normalizedRoomCode = normalizeRoomCode(params.roomCode);
   const sharedSnapshot = params.roomRepository.getRoomSnapshot(normalizedRoomCode);
 
   if (sharedSnapshot) {
+    if (params.joinAs === "spectator") {
+      return joinExistingPlanningPokerRoomAsSpectator({
+        room: sharedSnapshot.room,
+        currentSpectatorName: params.currentPlayerName,
+        currentSpectatorId: params.currentPlayerId,
+      });
+    }
+
     return joinExistingPlanningPokerRoom({
       room: sharedSnapshot.room,
       currentPlayerName: params.currentPlayerName,
       currentPlayerId: params.currentPlayerId,
+    });
+  }
+
+  if (params.joinAs === "spectator") {
+    return joinLocalPlanningPokerRoomAsSpectator({
+      roomCode: normalizedRoomCode,
+      currentSpectatorName: params.currentPlayerName,
+      currentSpectatorId: params.currentPlayerId,
     });
   }
 

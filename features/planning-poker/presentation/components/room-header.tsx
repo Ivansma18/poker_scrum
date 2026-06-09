@@ -23,49 +23,81 @@ export function RoomHeader({
   onRequestLeaveRoom,
 }: RoomHeaderProps) {
   return (
-    <header className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl shadow-black/20 backdrop-blur sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p className="text-sm font-medium uppercase tracking-[0.3em] text-cyan-200">
-          Planning poker
-        </p>
-        <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-          {room.name}
-        </h1>
-        <p className="mt-3 max-w-2xl text-base text-slate-300">
-          Vote privately, reveal estimates together, then reset the round for the
-          next story.
-        </p>
-        <p className="mt-2 text-sm font-medium text-cyan-200">
-          Room code: {room.id}
-        </p>
-        <p className="mt-1 text-sm font-medium text-slate-300">
-          Your role: {currentUserRole}
-        </p>
-        <div className="mt-4">
-          <ConnectionStatusIndicator status={connectionStatus} />
+    <header className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.03] p-4 backdrop-blur-xl card-shadow-lg sm:p-6">
+      <div className="absolute inset-0 gradient-mesh opacity-50" />
+      <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 sm:h-10 sm:w-10 sm:rounded-xl">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-white sm:h-5 sm:w-5"
+              >
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+            </div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-400 sm:text-sm">
+              Planning Poker
+            </p>
+          </div>
+          <h1 className="mt-3 truncate text-2xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+            {room.name}
+          </h1>
+          <p className="mt-2 hidden max-w-xl text-sm text-slate-400 sm:block sm:text-base">
+            Vote privately, reveal estimates together, then reset for the next
+            story.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <p className="text-xs text-slate-400 sm:text-sm">
+              Room: <span className="font-mono font-semibold text-cyan-400">{room.id}</span>
+            </p>
+            <p className="text-xs text-slate-400 sm:text-sm">
+              Role: <span className="font-semibold text-white capitalize">{currentUserRole}</span>
+            </p>
+          </div>
+          <div className="mt-3">
+            <ConnectionStatusIndicator status={connectionStatus} />
+          </div>
         </div>
-      </div>
-      <div className="flex flex-col gap-3 sm:items-end">
-        <div className="rounded-2xl bg-black/30 px-5 py-4 text-sm text-slate-200">
-          <span className="block text-2xl font-semibold text-white">
-            {room.votes.length}/{room.players.length}
-          </span>
-          votes submitted
+
+        <div className="flex flex-col gap-3 sm:items-end">
+          <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.04] px-4 py-3 sm:px-5 sm:py-4">
+            <div className="text-right">
+              <span className="block text-2xl font-bold tabular-nums text-white sm:text-3xl">
+                {room.votes.length}
+                <span className="text-lg text-slate-500">/{room.players.length}</span>
+              </span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500 sm:text-xs">
+                votes
+              </span>
+            </div>
+          </div>
+          <div className="flex w-full gap-2 sm:w-auto sm:flex-col sm:gap-2">
+            <button
+              type="button"
+              onClick={onCopyInviteLink}
+              className="flex-1 rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-4 py-2.5 text-xs font-semibold text-cyan-400 transition-all hover:bg-cyan-500/20 hover:text-cyan-300 sm:flex-none sm:px-5 sm:text-sm touch-target"
+            >
+              {inviteCopied ? "Copied!" : "Copy invite link"}
+            </button>
+            <button
+              type="button"
+              onClick={onRequestLeaveRoom}
+              className="flex-1 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-xs font-semibold text-slate-400 transition-all hover:bg-white/[0.06] hover:text-slate-200 sm:flex-none sm:px-5 sm:text-sm touch-target"
+            >
+              Leave room
+            </button>
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={onCopyInviteLink}
-          className="rounded-full border border-cyan-200/50 px-5 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-200 hover:text-cyan-950"
-        >
-          {inviteCopied ? "Invite link copied" : "Copy invite link"}
-        </button>
-        <button
-          type="button"
-          onClick={onRequestLeaveRoom}
-          className="rounded-full border border-rose-200/50 px-5 py-2 text-sm font-semibold text-rose-100 transition hover:bg-rose-200 hover:text-rose-950"
-        >
-          Leave room
-        </button>
       </div>
     </header>
   );

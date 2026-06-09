@@ -5,6 +5,7 @@ import {
   type PlanningPokerDeck,
   type PlanningPokerDeckKind,
   type PlanningPokerRole,
+  type Spectator,
   type StoryHistoryEntry,
   type VoteValue,
 } from "../domain/planning-poker";
@@ -22,6 +23,7 @@ export type LocalPlanningPokerState = {
   currentUserRole: PlanningPokerRole;
   currentStory: string;
   pendingStories: string[];
+  spectators: Spectator[];
   storyHistory: StoryHistoryEntry[];
 };
 
@@ -126,8 +128,39 @@ function parseLocalPlanningPokerState(
     currentStory:
       typeof state.currentStory === "string" ? state.currentStory : "",
     pendingStories: parsePendingStories(state.pendingStories),
+    spectators: parseSpectators(state.spectators),
     storyHistory: parseStoryHistory(state.storyHistory),
   };
+}
+
+function parseSpectators(value: unknown): Spectator[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((spectator): Spectator[] => {
+    if (!spectator || typeof spectator !== "object") {
+      return [];
+    }
+
+    const currentSpectator = spectator as Partial<Spectator>;
+
+    if (
+      typeof currentSpectator.id !== "string" ||
+      currentSpectator.id.length === 0 ||
+      typeof currentSpectator.name !== "string" ||
+      currentSpectator.name.trim().length === 0
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        id: currentSpectator.id,
+        name: currentSpectator.name.trim().replace(/\s+/g, " "),
+      },
+    ];
+  });
 }
 
 function parsePendingStories(value: unknown): string[] {
@@ -186,7 +219,11 @@ function parseStoryHistory(value: unknown): StoryHistoryEntry[] {
 }
 
 function parsePlanningPokerRole(value: unknown): PlanningPokerRole {
-  return value === "facilitator" ? "facilitator" : "participant";
+  if (value === "facilitator" || value === "spectator") {
+    return value;
+  }
+
+  return "participant";
 }
 
 function parsePlanningPokerDeck(value: unknown): PlanningPokerDeck | null {

@@ -19,22 +19,30 @@ export function CurrentStoryPanel({
   onApplyStory,
 }: CurrentStoryPanelProps) {
   return (
-    <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">Current story</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            {room.currentStory || "No story selected"}
+    <section className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 backdrop-blur-xl sm:p-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-semibold sm:text-xl">Current story</h2>
+          <p className="mt-0.5 truncate text-xs text-slate-400 sm:text-sm">
+            {room.currentStory || (
+              <span className="italic text-slate-600">No story selected</span>
+            )}
           </p>
         </div>
-        <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <span
+          className={`w-fit shrink-0 rounded-lg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider sm:px-2.5 sm:text-xs ${
+            room.currentStory
+              ? "bg-cyan-500/10 text-cyan-400"
+              : "bg-white/[0.06] text-slate-500"
+          }`}
+        >
           {room.currentStory ? "Estimating" : "Empty"}
         </span>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+      <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end sm:gap-3">
         <div>
-          <label className="block text-sm font-semibold" htmlFor="current-story">
+          <label className="block text-xs font-medium text-slate-400" htmlFor="current-story">
             Story name or ID
           </label>
           <input
@@ -43,18 +51,18 @@ export function CurrentStoryPanel({
             type="text"
             value={storyDraft}
             onChange={(event) => onStoryChange(event.target.value)}
-            className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none transition disabled:bg-slate-100 disabled:text-slate-500 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-            placeholder="Example: PROJ-123 Login flow"
+            className="mt-2 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-slate-500 input-focus disabled:opacity-50 sm:px-4 sm:py-3 sm:text-base"
+            placeholder="PROJ-123 Login flow"
           />
-          <p className="mt-1 text-xs text-slate-500">
-            Applying a different story clears the current votes.
+          <p className="mt-1.5 text-[10px] text-slate-500 sm:text-xs">
+            Changing story clears current votes.
           </p>
         </div>
         <button
           type="button"
           disabled={!canApplyStory || !canUseFacilitatorActions}
           onClick={onApplyStory}
-          className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+          className="w-full rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-all hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-5 sm:py-3 touch-target"
         >
           Apply story
         </button>

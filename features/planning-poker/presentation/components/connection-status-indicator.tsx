@@ -40,18 +40,17 @@ export function ConnectionStatusIndicator({
 
   return (
     <div
-      className={`w-fit rounded-2xl border px-4 py-3 ${content.badgeClassName}`}
+      className={`w-fit rounded-lg border px-2.5 py-1.5 sm:px-3 sm:py-2 ${content.badgeClassName}`}
       role="status"
       aria-live="polite"
     >
-      <div className="flex items-center gap-2 text-sm font-semibold">
+      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider sm:text-xs">
         <span
-          className={`h-2.5 w-2.5 rounded-full ${content.dotClassName}`}
+          className={`h-1.5 w-1.5 rounded-full sm:h-2 sm:w-2 ${content.dotClassName}`}
           aria-hidden="true"
         />
         {content.label}
       </div>
-      <p className="mt-1 text-xs opacity-80">{content.helperText}</p>
     </div>
   );
 }

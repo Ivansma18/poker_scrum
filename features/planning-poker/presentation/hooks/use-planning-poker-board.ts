@@ -34,6 +34,7 @@ import {
 } from "./planning-poker-session-helpers";
 
 export type EntryMode = "create" | "join";
+export type JoinAs = "participant" | "spectator";
 
 export function usePlanningPokerBoard(initialRoomCode = "") {
   const [entryMode, setEntryMode] = useState<EntryMode>(
@@ -42,6 +43,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
   const [roomName, setRoomName] = useState("");
   const [roomCode, setRoomCode] = useState(initialRoomCode);
   const [playerName, setPlayerName] = useState("");
+  const [joinAs, setJoinAs] = useState<JoinAs>("participant");
   const [currentPlayerId] = useState(getInitialCurrentPlayerId);
   const [customDeckInput, setCustomDeckInput] = useState<string | null>(null);
   const [storyInput, setStoryInput] = useState<string | null>(null);
@@ -73,7 +75,9 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
         deck: localState.deck,
         currentStory: localState.currentStory,
         pendingStories: localState.pendingStories,
+        spectators: localState.spectators,
         storyHistory: localState.storyHistory,
+        currentUserRole: localState.currentUserRole,
       })
     : null;
   const activeRoom = room ?? restoredRoom;
@@ -108,8 +112,12 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
     const currentPlayer = room.players.find(
       (player) => player.id === currentPlayerId,
     );
+    const currentSpectator = (room.spectators ?? []).find(
+      (spectator) => spectator.id === currentPlayerId,
+    );
+    const currentRoomMember = currentPlayer ?? currentSpectator;
 
-    if (!currentPlayer) {
+    if (!currentRoomMember) {
       return;
     }
 
@@ -117,13 +125,14 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
 
     saveLocalPlanningPokerState({
       playerId: currentPlayerId,
-      playerName: currentPlayer.name,
+      playerName: currentRoomMember.name,
       roomCode: room.id,
-      voteValue: currentVoteValue?.value,
+      voteValue: currentUserRole === "spectator" ? undefined : currentVoteValue?.value,
       deck: room.deck,
       currentUserRole,
       currentStory: room.currentStory,
       pendingStories: room.pendingStories ?? [],
+      spectators: room.spectators ?? [],
       storyHistory: room.storyHistory,
     });
   }, [currentPlayerId, currentUserRole, room]);
@@ -164,7 +173,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
       return;
     }
 
-    const nextRole = entryMode === "create" ? "facilitator" : "participant";
+    const nextRole = entryMode === "create" ? "facilitator" : joinAs;
 
     setCurrentUserRole(nextRole);
     setRoom(
@@ -178,6 +187,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
             roomCode,
             currentPlayerName: playerName,
             currentPlayerId,
+            joinAs,
             roomRepository,
           }),
     );
@@ -208,11 +218,13 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
       roomName,
       roomCode,
       playerName,
+      joinAs,
       canSubmit: canSubmitEntry,
       setEntryMode,
       setRoomName,
       setRoomCode,
       setPlayerName,
+      setJoinAs,
       onEnterRoom: handleEnterRoom,
     },
     session: activeRoom
@@ -220,6 +232,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
           room: activeRoom,
           currentPlayerId,
           currentUserRole,
+          isSpectator: currentUserRole === "spectator",
           connectionStatus,
           inviteCopied,
           isLeaveRoomDialogOpen,

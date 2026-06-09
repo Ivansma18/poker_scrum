@@ -7,23 +7,25 @@ type RoundHistoryProps = {
 
 export function RoundHistory({ room }: RoundHistoryProps) {
   return (
-    <section className="mt-8 border-t border-white/10 pt-6">
-      <h2 className="text-2xl font-semibold">Round history</h2>
+    <section className="mt-4 border-t border-white/[0.06] pt-4 sm:mt-5 sm:pt-5">
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+        Round history
+      </h2>
       {room.storyHistory.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-300">
-          Revealed rounds will appear here after you replace the story or reset.
+        <p className="mt-3 text-xs text-slate-600 sm:text-sm">
+          Revealed rounds will appear here.
         </p>
       ) : (
-        <div className="mt-5 flex flex-col gap-3">
+        <div className="mt-3 flex max-h-[200px] flex-col gap-1.5 overflow-y-auto scrollbar-thin sm:gap-2">
           {room.storyHistory.map((entry, index) => (
             <div
               key={`${entry.storyName}-${index}`}
-              className="rounded-2xl bg-white/10 px-4 py-3"
+              className="rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2.5"
             >
-              <p className="font-semibold">{entry.storyName}</p>
-              <p className="mt-1 text-sm text-slate-300">{entry.result}</p>
-              <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-                {entry.deckName} - {formatHistoryDate(entry.recordedAt)}
+              <p className="truncate text-sm font-medium text-white">{entry.storyName}</p>
+              <p className="mt-0.5 text-xs text-slate-400">{entry.result}</p>
+              <p className="mt-1 text-[10px] font-medium text-slate-600">
+                {entry.deckName} &middot; {formatHistoryDate(entry.recordedAt)}
               </p>
             </div>
           ))}

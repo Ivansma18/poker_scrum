@@ -1,6 +1,7 @@
 import {
   addPlayer,
   addPendingStories,
+  addSpectator,
   canFacilitateRoom,
   canCreateRoomWithName,
   canJoinWithPlayerName,
@@ -13,7 +14,7 @@ import {
   normalizeRoomCode,
   normalizeRoomName,
   parsePendingStories,
-  removePlayer,
+  removeRoomMember,
   revealVotes,
   resetRound,
   selectNextPendingStory,
@@ -49,6 +50,7 @@ export function createLocalPlanningPokerRoom(params: {
     players: [
       { id: params.currentPlayerId, name: normalizePlayerName(params.currentPlayerName) },
     ],
+    spectators: [],
     deck: params.deck,
     currentStory: params.currentStory,
     pendingStories: params.pendingStories,
@@ -78,6 +80,7 @@ export function joinLocalPlanningPokerRoom(params: {
       id: normalizeRoomCode(params.roomCode),
       name: `Room ${normalizeRoomCode(params.roomCode)}`,
       players: [],
+      spectators: [],
       deck: params.deck,
       currentStory: params.currentStory,
       pendingStories: params.pendingStories,
@@ -96,10 +99,67 @@ export function joinExistingPlanningPokerRoom(params: {
     throw new Error("A player name is required to join the room.");
   }
 
-  return addPlayer({ ...params.room, pendingStories: params.room.pendingStories ?? [] }, {
+  return addPlayer({ ...params.room, pendingStories: params.room.pendingStories ?? [], spectators: params.room.spectators ?? [] }, {
     id: params.currentPlayerId,
     name: normalizePlayerName(params.currentPlayerName),
   });
+}
+
+export function joinExistingPlanningPokerRoomAsSpectator(params: {
+  room: PlanningPokerRoom;
+  currentSpectatorName: string;
+  currentSpectatorId: string;
+}): PlanningPokerRoom {
+  if (!canJoinWithPlayerName(params.currentSpectatorName)) {
+    throw new Error("A spectator name is required to join the room.");
+  }
+
+  return addSpectator(
+    {
+      ...params.room,
+      pendingStories: params.room.pendingStories ?? [],
+      spectators: params.room.spectators ?? [],
+    },
+    {
+      id: params.currentSpectatorId,
+      name: normalizePlayerName(params.currentSpectatorName),
+    },
+  );
+}
+
+export function joinLocalPlanningPokerRoomAsSpectator(params: {
+  roomCode: string;
+  currentSpectatorName: string;
+  currentSpectatorId: string;
+  deck?: PlanningPokerDeck;
+  currentStory?: string;
+  pendingStories?: string[];
+  storyHistory?: StoryHistoryEntry[];
+}): PlanningPokerRoom {
+  if (!canJoinWithRoomCode(params.roomCode)) {
+    throw new Error("A room code is required to join a room.");
+  }
+
+  if (!canJoinWithPlayerName(params.currentSpectatorName)) {
+    throw new Error("A spectator name is required to join the room.");
+  }
+
+  return addSpectator(
+    createPlanningPokerRoom({
+      id: normalizeRoomCode(params.roomCode),
+      name: `Room ${normalizeRoomCode(params.roomCode)}`,
+      players: [],
+      spectators: [],
+      deck: params.deck,
+      currentStory: params.currentStory,
+      pendingStories: params.pendingStories,
+      storyHistory: params.storyHistory,
+    }),
+    {
+      id: params.currentSpectatorId,
+      name: normalizePlayerName(params.currentSpectatorName),
+    },
+  );
 }
 
 export function voteInRoom(params: {
@@ -117,7 +177,7 @@ export function leavePlanningPokerRoom(params: {
   room: PlanningPokerRoom;
   playerId: string;
 }): PlanningPokerRoom {
-  return removePlayer(params.room, params.playerId);
+  return removeRoomMember(params.room, params.playerId);
 }
 
 export function revealRoomVotes(params: {
