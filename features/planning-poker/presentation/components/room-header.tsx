@@ -3,15 +3,19 @@ import type {
   PlanningPokerRole,
   PlanningPokerRoom,
 } from "../../domain/planning-poker";
+import type { ThemePreference } from "../hooks/use-theme-preference";
 import { ConnectionStatusIndicator } from "./connection-status-indicator";
+import { ThemeToggle } from "./theme-toggle";
 
 type RoomHeaderProps = {
   room: PlanningPokerRoom;
   currentUserRole: PlanningPokerRole;
   connectionStatus: PlanningPokerConnectionStatus;
   inviteCopied: boolean;
+  theme: ThemePreference;
   onCopyInviteLink: () => void;
   onRequestLeaveRoom: () => void;
+  onToggleTheme: () => void;
 };
 
 export function RoomHeader({
@@ -19,11 +23,13 @@ export function RoomHeader({
   currentUserRole,
   connectionStatus,
   inviteCopied,
+  theme,
   onCopyInviteLink,
   onRequestLeaveRoom,
+  onToggleTheme,
 }: RoomHeaderProps) {
   return (
-    <header className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.03] p-4 backdrop-blur-xl card-shadow-lg sm:p-6">
+    <header className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 backdrop-blur-xl card-shadow-lg sm:rounded-3xl sm:p-6">
       <div className="absolute inset-0 gradient-mesh opacity-50" />
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 flex-1">
@@ -49,7 +55,7 @@ export function RoomHeader({
               Planning Poker
             </p>
           </div>
-          <h1 className="mt-3 truncate text-2xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+          <h1 className="mt-3 break-words text-2xl font-bold tracking-tight sm:truncate sm:text-4xl lg:text-5xl">
             {room.name}
           </h1>
           <p className="mt-2 hidden max-w-xl text-sm text-slate-400 sm:block sm:text-base">
@@ -81,7 +87,8 @@ export function RoomHeader({
               </span>
             </div>
           </div>
-          <div className="flex w-full gap-2 sm:w-auto sm:flex-col sm:gap-2">
+          <div className="grid w-full grid-cols-1 gap-2 min-[380px]:grid-cols-3 sm:flex sm:w-auto sm:flex-col sm:gap-2">
+            <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} />
             <button
               type="button"
               onClick={onCopyInviteLink}

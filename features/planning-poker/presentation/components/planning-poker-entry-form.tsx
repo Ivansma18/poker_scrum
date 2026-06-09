@@ -1,5 +1,7 @@
 import type { FormEvent } from "react";
 import type { EntryMode, JoinAs } from "../hooks/use-planning-poker-board";
+import type { ThemePreference } from "../hooks/use-theme-preference";
+import { ThemeToggle } from "./theme-toggle";
 
 type PlanningPokerEntryFormProps = {
   entryMode: EntryMode;
@@ -7,6 +9,7 @@ type PlanningPokerEntryFormProps = {
   roomCode: string;
   playerName: string;
   joinAs: JoinAs;
+  theme: ThemePreference;
   canSubmit: boolean;
   onEntryModeChange: (mode: EntryMode) => void;
   onJoinAsChange: (mode: JoinAs) => void;
@@ -14,6 +17,7 @@ type PlanningPokerEntryFormProps = {
   onRoomCodeChange: (value: string) => void;
   onPlayerNameChange: (value: string) => void;
   onSubmit: () => void;
+  onToggleTheme: () => void;
 };
 
 export function PlanningPokerEntryForm({
@@ -22,6 +26,7 @@ export function PlanningPokerEntryForm({
   roomCode,
   playerName,
   joinAs,
+  theme,
   canSubmit,
   onEntryModeChange,
   onJoinAsChange,
@@ -29,6 +34,7 @@ export function PlanningPokerEntryForm({
   onRoomCodeChange,
   onPlayerNameChange,
   onSubmit,
+  onToggleTheme,
 }: PlanningPokerEntryFormProps) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,9 +42,12 @@ export function PlanningPokerEntryForm({
   }
 
   return (
-    <main className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#0b1120] px-4 py-8 text-white sm:px-6">
+    <main className="app-shell relative flex min-h-[100dvh] items-center justify-center overflow-hidden px-4 py-8 sm:px-6">
       <div className="absolute inset-0 gradient-mesh" />
       <div className="absolute inset-0 noise-overlay" />
+      <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+        <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} />
+      </div>
 
       <div className="relative z-10 w-full max-w-sm sm:max-w-md">
         <div className="mb-8 text-center sm:mb-10">

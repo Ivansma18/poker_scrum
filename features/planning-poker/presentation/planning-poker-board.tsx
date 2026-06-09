@@ -3,6 +3,7 @@
 import { PlanningPokerEntryForm } from "./components/planning-poker-entry-form";
 import { PlanningPokerRoomView } from "./components/planning-poker-room-view";
 import { usePlanningPokerBoard } from "./hooks/use-planning-poker-board";
+import { useThemePreference } from "./hooks/use-theme-preference";
 
 type PlanningPokerBoardProps = {
   initialRoomCode?: string;
@@ -12,6 +13,7 @@ export function PlanningPokerBoard({
   initialRoomCode = "",
 }: PlanningPokerBoardProps) {
   const { entry, session } = usePlanningPokerBoard(initialRoomCode);
+  const { theme, toggleTheme } = useThemePreference();
 
   if (!session) {
     return (
@@ -21,6 +23,7 @@ export function PlanningPokerBoard({
         roomCode={entry.roomCode}
         playerName={entry.playerName}
         joinAs={entry.joinAs}
+        theme={theme}
         canSubmit={entry.canSubmit}
         onEntryModeChange={entry.setEntryMode}
         onJoinAsChange={entry.setJoinAs}
@@ -28,6 +31,7 @@ export function PlanningPokerBoard({
         onRoomCodeChange={entry.setRoomCode}
         onPlayerNameChange={entry.setPlayerName}
         onSubmit={entry.onEnterRoom}
+        onToggleTheme={toggleTheme}
       />
     );
   }
@@ -37,6 +41,7 @@ export function PlanningPokerBoard({
       room={session.room}
       currentUserRole={session.currentUserRole}
       isSpectator={session.isSpectator}
+      theme={theme}
       connectionStatus={session.connectionStatus}
       inviteCopied={session.inviteCopied}
       isLeaveRoomDialogOpen={session.isLeaveRoomDialogOpen}
@@ -66,6 +71,7 @@ export function PlanningPokerBoard({
       onAdvanceToNextPendingStory={session.onAdvanceToNextPendingStory}
       onRevealVotes={session.onRevealVotes}
       onResetRound={session.onResetRound}
+      onToggleTheme={toggleTheme}
     />
   );
 }

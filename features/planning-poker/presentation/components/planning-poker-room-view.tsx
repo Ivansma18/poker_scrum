@@ -9,6 +9,7 @@ import type {
   Vote,
   VoteValue,
 } from "../../domain/planning-poker";
+import type { ThemePreference } from "../hooks/use-theme-preference";
 import { CurrentStoryPanel } from "./current-story-panel";
 import { ConfirmationDialog } from "./confirmation-dialog";
 import { DeckSelector } from "./deck-selector";
@@ -23,6 +24,7 @@ type PlanningPokerRoomViewProps = {
   room: PlanningPokerRoom;
   currentUserRole: PlanningPokerRole;
   isSpectator: boolean;
+  theme: ThemePreference;
   connectionStatus: PlanningPokerConnectionStatus;
   inviteCopied: boolean;
   isLeaveRoomDialogOpen: boolean;
@@ -52,12 +54,14 @@ type PlanningPokerRoomViewProps = {
   onAdvanceToNextPendingStory: () => void;
   onRevealVotes: () => void;
   onResetRound: () => void;
+  onToggleTheme: () => void;
 };
 
 export function PlanningPokerRoomView({
   room,
   currentUserRole,
   isSpectator,
+  theme,
   connectionStatus,
   inviteCopied,
   isLeaveRoomDialogOpen,
@@ -87,11 +91,12 @@ export function PlanningPokerRoomView({
   onAdvanceToNextPendingStory,
   onRevealVotes,
   onResetRound,
+  onToggleTheme,
 }: PlanningPokerRoomViewProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <main className="relative min-h-[100dvh] bg-[#0b1120] px-4 py-4 text-white sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+    <main className="app-shell relative min-h-[100dvh] overflow-x-hidden px-3 py-3 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="absolute inset-0 gradient-mesh" />
       <div className="absolute inset-0 noise-overlay" />
 
@@ -103,13 +108,16 @@ export function PlanningPokerRoomView({
           inviteCopied={inviteCopied}
           onCopyInviteLink={onCopyInviteLink}
           onRequestLeaveRoom={onRequestLeaveRoom}
+          theme={theme}
+          onToggleTheme={onToggleTheme}
         />
 
         <div className="lg:hidden">
           <button
             type="button"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium text-slate-300 transition-all hover:bg-white/[0.06] hover:text-white"
+            className="touch-target flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium text-slate-300 transition-all hover:bg-white/[0.06] hover:text-white"
+            aria-expanded={isSidebarOpen}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -129,6 +137,9 @@ export function PlanningPokerRoomView({
             </svg>
             <span>
               {room.players.length} {room.players.length === 1 ? "player" : "players"}
+              {(room.spectators ?? []).length > 0
+                ? ` · ${(room.spectators ?? []).length} watching`
+                : ""}
             </span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -153,46 +164,58 @@ export function PlanningPokerRoomView({
         </div>
 
         <section className="grid gap-4 sm:gap-5 lg:grid-cols-[1fr_340px] lg:gap-6 xl:grid-cols-[1fr_380px]">
-          <div className="space-y-4 sm:space-y-5">
-            <DeckSelector
-              room={room}
-              customDeckDraft={customDeckDraft}
-              canApplyCustomDeck={canApplyCustomDeck}
-              canUseFacilitatorActions={canUseFacilitatorActions}
-              onCustomDeckChange={onCustomDeckChange}
-              onSelectPresetDeck={onSelectPresetDeck}
-              onApplyCustomDeck={onApplyCustomDeck}
-            />
-            <CurrentStoryPanel
-              room={room}
-              storyDraft={storyDraft}
-              canApplyStory={canApplyStory}
-              canUseFacilitatorActions={canUseFacilitatorActions}
-              onStoryChange={onStoryChange}
-              onApplyStory={onApplyStory}
-            />
-            <PendingStoriesPanel
-              pendingStories={pendingStories}
-              pendingStoriesInput={pendingStoriesInput}
-              canLoadPendingStories={canLoadPendingStories}
-              canUseFacilitatorActions={canUseFacilitatorActions}
-              onPendingStoriesChange={onPendingStoriesChange}
-              onLoadPendingStories={onLoadPendingStories}
-              onSelectPendingStory={onSelectPendingStory}
-              onAdvanceToNextPendingStory={onAdvanceToNextPendingStory}
-            />
-            <VotingDeck
-              room={room}
-              currentVote={currentVote}
-              isSpectator={isSpectator}
-              onVote={onVote}
-            />
-            <ResultsSummary voteSummary={voteSummary} />
-            <FacilitatorActions
-              canUseFacilitatorActions={canUseFacilitatorActions}
-              onRevealVotes={onRevealVotes}
-              onResetRound={onResetRound}
-            />
+          <div className="flex flex-col gap-4 sm:gap-5">
+            <div className="order-2 lg:order-1">
+              <DeckSelector
+                room={room}
+                customDeckDraft={customDeckDraft}
+                canApplyCustomDeck={canApplyCustomDeck}
+                canUseFacilitatorActions={canUseFacilitatorActions}
+                onCustomDeckChange={onCustomDeckChange}
+                onSelectPresetDeck={onSelectPresetDeck}
+                onApplyCustomDeck={onApplyCustomDeck}
+              />
+            </div>
+            <div className="order-3 lg:order-2">
+              <CurrentStoryPanel
+                room={room}
+                storyDraft={storyDraft}
+                canApplyStory={canApplyStory}
+                canUseFacilitatorActions={canUseFacilitatorActions}
+                onStoryChange={onStoryChange}
+                onApplyStory={onApplyStory}
+              />
+            </div>
+            <div className="order-4 lg:order-3">
+              <PendingStoriesPanel
+                pendingStories={pendingStories}
+                pendingStoriesInput={pendingStoriesInput}
+                canLoadPendingStories={canLoadPendingStories}
+                canUseFacilitatorActions={canUseFacilitatorActions}
+                onPendingStoriesChange={onPendingStoriesChange}
+                onLoadPendingStories={onLoadPendingStories}
+                onSelectPendingStory={onSelectPendingStory}
+                onAdvanceToNextPendingStory={onAdvanceToNextPendingStory}
+              />
+            </div>
+            <div className="order-1 lg:order-4">
+              <VotingDeck
+                room={room}
+                currentVote={currentVote}
+                isSpectator={isSpectator}
+                onVote={onVote}
+              />
+            </div>
+            <div className="order-5">
+              <ResultsSummary voteSummary={voteSummary} />
+            </div>
+            <div className="order-6">
+              <FacilitatorActions
+                canUseFacilitatorActions={canUseFacilitatorActions}
+                onRevealVotes={onRevealVotes}
+                onResetRound={onResetRound}
+              />
+            </div>
           </div>
 
           <div className="hidden lg:block">

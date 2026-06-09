@@ -23,7 +23,7 @@ export function ConfirmationDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm sm:px-6"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 px-3 py-4 backdrop-blur-sm sm:px-6 sm:py-6"
       role="presentation"
       onMouseDown={onCancel}
     >
@@ -31,7 +31,7 @@ export function ConfirmationDialog({
         aria-modal="true"
         aria-labelledby="confirmation-dialog-title"
         aria-describedby="confirmation-dialog-description"
-        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#141c2e] p-5 shadow-2xl sm:max-w-md sm:p-6"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl border border-white/[0.08] bg-[#141c2e] p-5 shadow-2xl sm:max-w-md sm:p-6"
         role="dialog"
         onMouseDown={(event) => event.stopPropagation()}
       >
