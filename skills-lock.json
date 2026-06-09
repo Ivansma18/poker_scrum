@@ -22,6 +22,12 @@
       "sourceType": "autoskills-registry",
       "computedHash": "82fb11a63fb1e35ee2469516ed02d54695f783115b1540c0e783197af4240a3a"
     },
+    "javascript-typescript-jest": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/javascript-typescript-jest/SKILL.md",
+      "computedHash": "0073d19ab0275eb6a8200aced6789a53744667bd717b5d1f44ce708a1740e5d4"
+    },
     "nodejs-backend-patterns": {
       "source": "wshobson/agents",
       "sourceType": "autoskills-registry",
@@ -46,6 +52,12 @@
       "source": "wshobson/agents",
       "sourceType": "autoskills-registry",
       "computedHash": "5ca0e177c6aaaba1889255691224daafdb7d71f317cc70bede1590d3907ded42"
+    },
+    "webapp-testing": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/webapp-testing/SKILL.md",
+      "computedHash": "3f14af7f5690695209c22fbf8c8d133769a86d64892602c09bb13f135e14e857"
     }
   }
 }
