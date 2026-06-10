@@ -86,6 +86,12 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
   const canSubmitJoin =
     canJoinWithRoomCode(roomCode) && canJoinWithPlayerName(playerName);
   const canSubmitEntry = entryMode === "create" ? canSubmitCreate : canSubmitJoin;
+  const entryValidationMessages = getEntryValidationMessages({
+    entryMode,
+    roomName,
+    roomCode,
+    playerName,
+  });
   const canUseFacilitatorActions = canUseFacilitatorControls(currentUserRole);
   const currentVote = activeRoom
     ? getVoteForPlayer(activeRoom, currentPlayerId)
@@ -219,6 +225,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
       roomCode,
       playerName,
       joinAs,
+      validationMessages: entryValidationMessages,
       canSubmit: canSubmitEntry,
       setEntryMode,
       setRoomName,
@@ -269,4 +276,27 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
         }
       : null,
   };
+}
+
+function getEntryValidationMessages(params: {
+  entryMode: EntryMode;
+  roomName: string;
+  roomCode: string;
+  playerName: string;
+}): string[] {
+  const messages: string[] = [];
+
+  if (params.entryMode === "create" && !canCreateRoomWithName(params.roomName)) {
+    messages.push("Enter a room name to create a room.");
+  }
+
+  if (params.entryMode === "join" && !canJoinWithRoomCode(params.roomCode)) {
+    messages.push("Enter a room code to join an existing room.");
+  }
+
+  if (!canJoinWithPlayerName(params.playerName)) {
+    messages.push("Enter your name so the room can identify you.");
+  }
+
+  return messages;
 }

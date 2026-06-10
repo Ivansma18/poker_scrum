@@ -24,6 +24,7 @@ export function PlanningPokerBoard({
         playerName={entry.playerName}
         joinAs={entry.joinAs}
         theme={theme}
+        validationMessages={entry.validationMessages}
         canSubmit={entry.canSubmit}
         onEntryModeChange={entry.setEntryMode}
         onJoinAsChange={entry.setJoinAs}

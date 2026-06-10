@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import type { EntryMode, JoinAs } from "../hooks/use-planning-poker-board";
 import type { ThemePreference } from "../hooks/use-theme-preference";
+import { FeedbackMessage } from "./feedback-message";
 import { ThemeToggle } from "./theme-toggle";
 
 type PlanningPokerEntryFormProps = {
@@ -10,6 +11,7 @@ type PlanningPokerEntryFormProps = {
   playerName: string;
   joinAs: JoinAs;
   theme: ThemePreference;
+  validationMessages: string[];
   canSubmit: boolean;
   onEntryModeChange: (mode: EntryMode) => void;
   onJoinAsChange: (mode: JoinAs) => void;
@@ -27,6 +29,7 @@ export function PlanningPokerEntryForm({
   playerName,
   joinAs,
   theme,
+  validationMessages,
   canSubmit,
   onEntryModeChange,
   onJoinAsChange,
@@ -195,6 +198,14 @@ export function PlanningPokerEntryForm({
                 autoComplete="name"
               />
             </div>
+
+            {validationMessages.length > 0 ? (
+              <div className="space-y-2" aria-live="polite">
+                {validationMessages.map((message) => (
+                  <FeedbackMessage key={message} tone="info" message={message} />
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <button

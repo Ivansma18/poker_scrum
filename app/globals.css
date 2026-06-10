@@ -312,4 +312,20 @@ html {
   :root[data-theme="light"] .app-shell .from-cyan-400 {
     color: #ffffff;
   }
+
+  :root[data-theme="light"] .app-shell .text-rose-100 {
+    color: #9f1239;
+  }
+
+  :root[data-theme="light"] .app-shell .text-amber-100 {
+    color: #92400e;
+  }
+
+  :root[data-theme="light"] .app-shell .text-cyan-100 {
+    color: #155e75;
+  }
+
+  :root[data-theme="light"] .app-shell .text-emerald-100 {
+    color: #047857;
+  }
 }

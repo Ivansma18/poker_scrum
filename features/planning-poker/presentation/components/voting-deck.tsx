@@ -1,4 +1,5 @@
 import type { PlanningPokerRoom, Vote, VoteValue } from "../../domain/planning-poker";
+import { FeedbackMessage } from "./feedback-message";
 
 type VotingDeckProps = {
   room: PlanningPokerRoom;
@@ -13,6 +14,8 @@ export function VotingDeck({
   isSpectator,
   onVote,
 }: VotingDeckProps) {
+  const votingBlockedMessage = getVotingBlockedMessage(room, isSpectator);
+
   return (
     <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 backdrop-blur-xl sm:p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -36,10 +39,10 @@ export function VotingDeck({
         </span>
       </div>
 
-      {isSpectator ? (
-        <p className="mt-4 rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-100">
-          You are observing this session and cannot submit votes.
-        </p>
+      {votingBlockedMessage ? (
+        <div className="mt-4">
+          <FeedbackMessage tone="info" message={votingBlockedMessage} />
+        </div>
       ) : null}
 
       <div className="mt-4 grid grid-cols-4 gap-2 min-[430px]:grid-cols-5 sm:grid-cols-5 sm:gap-2.5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6">
@@ -74,4 +77,19 @@ export function VotingDeck({
       </div>
     </div>
   );
+}
+
+function getVotingBlockedMessage(
+  room: PlanningPokerRoom,
+  isSpectator: boolean,
+): string | null {
+  if (isSpectator) {
+    return "Spectators can watch the session but cannot submit votes.";
+  }
+
+  if (room.revealed) {
+    return "Voting is closed because this round has already been revealed. Reset the round to vote again.";
+  }
+
+  return null;
 }

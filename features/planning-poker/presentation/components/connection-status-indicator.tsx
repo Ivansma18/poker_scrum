@@ -37,6 +37,7 @@ export function ConnectionStatusIndicator({
   status,
 }: ConnectionStatusIndicatorProps) {
   const content = connectionStatusContent[status];
+  const shouldShowHelperText = status !== "connected";
 
   return (
     <div
@@ -51,6 +52,11 @@ export function ConnectionStatusIndicator({
         />
         {content.label}
       </div>
+      {shouldShowHelperText ? (
+        <p className="mt-1 text-xs normal-case tracking-normal opacity-85">
+          {content.helperText}
+        </p>
+      ) : null}
     </div>
   );
 }
