@@ -1,3 +1,6 @@
+import { motion } from "motion/react";
+import { slideUp } from "../animation";
+
 export type FeedbackTone = "error" | "warning" | "info";
 
 const feedbackToneClassNames: Record<FeedbackTone, string> = {
@@ -13,12 +16,17 @@ type FeedbackMessageProps = {
 
 export function FeedbackMessage({ tone, message }: FeedbackMessageProps) {
   return (
-    <p
+    <motion.p
+      variants={slideUp}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      transition={{ duration: 0.2, ease: "easeOut" }}
       className={`rounded-xl border px-3 py-2 text-sm ${feedbackToneClassNames[tone]}`}
       role={tone === "error" ? "alert" : "status"}
       aria-live="polite"
     >
       {message}
-    </p>
+    </motion.p>
   );
 }

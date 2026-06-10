@@ -1,6 +1,8 @@
 import type { FormEvent } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import type { EntryMode, JoinAs } from "../hooks/use-planning-poker-board";
 import type { ThemePreference } from "../hooks/use-theme-preference";
+import { slideUp } from "../animation";
 import { FeedbackMessage } from "./feedback-message";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -52,9 +54,19 @@ export function PlanningPokerEntryForm({
         <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} />
       </div>
 
-      <div className="relative z-10 w-full max-w-sm sm:max-w-md">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-sm sm:max-w-md"
+      >
         <div className="mb-8 text-center sm:mb-10">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-600 shadow-lg shadow-cyan-500/25 sm:h-16 sm:w-16 sm:rounded-3xl">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-600 shadow-lg shadow-cyan-500/25 sm:h-16 sm:w-16 sm:rounded-3xl"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="28"
@@ -74,7 +86,7 @@ export function PlanningPokerEntryForm({
               <path d="M14 13h2" />
               <path d="M14 17h2" />
             </svg>
-          </div>
+          </motion.div>
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-400 sm:text-sm">
             Planning Poker
           </p>
@@ -118,71 +130,96 @@ export function PlanningPokerEntryForm({
           </div>
 
           <div className="mt-6 space-y-4">
-            {entryMode === "create" ? (
-              <div>
-                <label className="block text-xs font-medium text-slate-400" htmlFor="room-name">
-                  Room name
-                </label>
-                <input
-                  id="room-name"
-                  type="text"
-                  value={roomName}
-                  onChange={(event) => onRoomNameChange(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-slate-500 input-focus sm:text-base"
-                  placeholder="Sprint planning"
-                  autoComplete="off"
-                  autoFocus
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="block text-xs font-medium text-slate-400" htmlFor="room-code">
-                  Room code
-                </label>
-                <input
-                  id="room-code"
-                  type="text"
-                  value={roomCode}
-                  onChange={(event) => onRoomCodeChange(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm uppercase text-white placeholder-slate-500 input-focus sm:text-base"
-                  placeholder="SPRINT"
-                  autoComplete="off"
-                  autoFocus
-                />
-              </div>
-            )}
+            <AnimatePresence mode="wait">
+              {entryMode === "create" ? (
+                <motion.div
+                  key="create-fields"
+                  variants={slideUp}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  transition={{ duration: 0.15 }}
+                >
+                  <label className="block text-xs font-medium text-slate-400" htmlFor="room-name">
+                    Room name
+                  </label>
+                  <input
+                    id="room-name"
+                    type="text"
+                    value={roomName}
+                    onChange={(event) => onRoomNameChange(event.target.value)}
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-slate-500 input-focus sm:text-base"
+                    placeholder="Sprint planning"
+                    autoComplete="off"
+                    autoFocus
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="join-fields"
+                  variants={slideUp}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  transition={{ duration: 0.15 }}
+                >
+                  <label className="block text-xs font-medium text-slate-400" htmlFor="room-code">
+                    Room code
+                  </label>
+                  <input
+                    id="room-code"
+                    type="text"
+                    value={roomCode}
+                    onChange={(event) => onRoomCodeChange(event.target.value)}
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm uppercase text-white placeholder-slate-500 input-focus sm:text-base"
+                    placeholder="SPRINT"
+                    autoComplete="off"
+                    autoFocus
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {entryMode === "join" ? (
-              <div>
-                <p className="block text-xs font-medium text-slate-400">
-                  Join as
-                </p>
-                <div className="mt-2 grid grid-cols-2 gap-1 rounded-xl bg-white/[0.05] p-1">
-                  <button
-                    type="button"
-                    onClick={() => onJoinAsChange("participant")}
-                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all sm:text-sm ${
-                      joinAs === "participant"
-                        ? "bg-white text-slate-950 shadow-sm"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    Participant
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onJoinAsChange("spectator")}
-                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all sm:text-sm ${
-                      joinAs === "spectator"
-                        ? "bg-white text-slate-950 shadow-sm"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    Spectator
-                  </button>
-                </div>
-              </div>
-            ) : null}
+            <AnimatePresence>
+              {entryMode === "join" ? (
+                <motion.div
+                  key="join-as"
+                  variants={slideUp}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  transition={{ duration: 0.15 }}
+                >
+                  <p className="block text-xs font-medium text-slate-400">
+                    Join as
+                  </p>
+                  <div className="mt-2 grid grid-cols-2 gap-1 rounded-xl bg-white/[0.05] p-1">
+                    <button
+                      type="button"
+                      onClick={() => onJoinAsChange("participant")}
+                      className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all sm:text-sm ${
+                        joinAs === "participant"
+                          ? "bg-white text-slate-950 shadow-sm"
+                          : "text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      Participant
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onJoinAsChange("spectator")}
+                      className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all sm:text-sm ${
+                        joinAs === "spectator"
+                          ? "bg-white text-slate-950 shadow-sm"
+                          : "text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      Spectator
+                    </button>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
 
             <div>
               <label className="block text-xs font-medium text-slate-400" htmlFor="player-name">
@@ -199,13 +236,23 @@ export function PlanningPokerEntryForm({
               />
             </div>
 
-            {validationMessages.length > 0 ? (
-              <div className="space-y-2" aria-live="polite">
-                {validationMessages.map((message) => (
-                  <FeedbackMessage key={message} tone="info" message={message} />
-                ))}
-              </div>
-            ) : null}
+            <AnimatePresence>
+              {validationMessages.length > 0 ? (
+                <motion.div
+                  key="validation-messages"
+                  variants={slideUp}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="space-y-2"
+                  aria-live="polite"
+                >
+                  {validationMessages.map((message) => (
+                    <FeedbackMessage key={message} tone="info" message={message} />
+                  ))}
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
           </div>
 
           <button
@@ -220,7 +267,7 @@ export function PlanningPokerEntryForm({
                 : "Join room"}
           </button>
         </form>
-      </div>
+      </motion.div>
     </main>
   );
 }

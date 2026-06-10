@@ -1,3 +1,5 @@
+import { AnimatePresence, motion } from "motion/react";
+import { slideUp, staggerContainer, staggerItem } from "../animation";
 import { FacilitatorPermissionNotice } from "./facilitator-permission";
 
 type PendingStoriesPanelProps = {
@@ -73,25 +75,43 @@ export function PendingStoriesPanel({
         </button>
       </div>
 
-      {pendingStories.length === 0 ? (
-        <div className="mt-4 rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] px-4 py-6 text-center">
-          <p className="text-xs text-slate-500 sm:text-sm">No pending stories loaded.</p>
-        </div>
-      ) : (
-        <div className="mt-3 flex max-h-[200px] flex-col gap-1 overflow-y-auto scrollbar-thin sm:mt-4 sm:gap-1.5">
-          {pendingStories.map((story) => (
-            <button
-              key={story}
-              type="button"
-              disabled={!canUseFacilitatorActions}
-              onClick={() => onSelectPendingStory(story)}
-              className="rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2.5 text-left text-xs font-medium text-slate-300 transition-all hover:bg-white/[0.06] hover:text-white disabled:opacity-40 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm touch-target"
-            >
-              {story}
-            </button>
-          ))}
-        </div>
-      )}
+      <AnimatePresence>
+        {pendingStories.length === 0 ? (
+          <motion.div
+            key="empty-stories"
+            variants={slideUp}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{ duration: 0.2 }}
+            className="mt-4 rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] px-4 py-6 text-center"
+          >
+            <p className="text-xs text-slate-500 sm:text-sm">No pending stories loaded.</p>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="stories-list"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="mt-3 flex max-h-[200px] flex-col gap-1 overflow-y-auto scrollbar-thin sm:mt-4 sm:gap-1.5"
+          >
+            {pendingStories.map((story) => (
+              <motion.button
+                key={story}
+                variants={staggerItem}
+                type="button"
+                disabled={!canUseFacilitatorActions}
+                onClick={() => onSelectPendingStory(story)}
+                whileTap={{ scale: 0.98 }}
+                className="rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2.5 text-left text-xs font-medium text-slate-300 transition-all hover:bg-white/[0.06] hover:text-white disabled:opacity-40 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm touch-target"
+              >
+                {story}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <FacilitatorPermissionNotice
         canUseFacilitatorActions={canUseFacilitatorActions}

@@ -1,4 +1,6 @@
+import { AnimatePresence, motion } from "motion/react";
 import type { PlanningPokerConnectionStatus } from "../../application/planning-poker-room-repository";
+import { slideDown } from "../animation";
 
 const connectionStatusContent: Record<
   PlanningPokerConnectionStatus,
@@ -47,16 +49,26 @@ export function ConnectionStatusIndicator({
     >
       <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider sm:text-xs">
         <span
-          className={`h-1.5 w-1.5 rounded-full sm:h-2 sm:w-2 ${content.dotClassName}`}
+          className={`h-1.5 w-1.5 rounded-full sm:h-2 sm:w-2 ${content.dotClassName} ${status !== "connected" ? "status-dot-pulse" : ""}`}
           aria-hidden="true"
         />
         {content.label}
       </div>
-      {shouldShowHelperText ? (
-        <p className="mt-1 text-xs normal-case tracking-normal opacity-85">
-          {content.helperText}
-        </p>
-      ) : null}
+      <AnimatePresence>
+        {shouldShowHelperText ? (
+          <motion.p
+            key="helper-text"
+            variants={slideDown}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="mt-1 text-xs normal-case tracking-normal opacity-85"
+          >
+            {content.helperText}
+          </motion.p>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import type { PlanningPokerConnectionStatus } from "../../application/planning-poker-room-repository";
 import type {
   PlanningPokerRole,
@@ -10,6 +11,7 @@ import type {
   VoteValue,
 } from "../../domain/planning-poker";
 import type { ThemePreference } from "../hooks/use-theme-preference";
+import { slideDown } from "../animation";
 import { CurrentStoryPanel } from "./current-story-panel";
 import { ConfirmationDialog } from "./confirmation-dialog";
 import { DeckSelector } from "./deck-selector";
@@ -158,11 +160,21 @@ export function PlanningPokerRoomView({
               <path d="m6 9 6 6 6-6" />
             </svg>
           </button>
-          {isSidebarOpen && (
-            <div className="mt-3">
-              <PlayersSidebar room={room} />
-            </div>
-          )}
+          <AnimatePresence>
+            {isSidebarOpen ? (
+              <motion.div
+                key="mobile-sidebar"
+                variants={slideDown}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="mt-3"
+              >
+                <PlayersSidebar room={room} />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
 
         <section className="grid gap-4 sm:gap-5 lg:grid-cols-[1fr_340px] lg:gap-6 xl:grid-cols-[1fr_380px]">

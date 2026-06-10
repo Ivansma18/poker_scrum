@@ -1,4 +1,6 @@
+import { motion } from "motion/react";
 import type { RevealedVoteSummary } from "../../domain/planning-poker";
+import { slideUp, staggerContainer, staggerItem } from "../animation";
 
 type ResultsSummaryProps = {
   voteSummary: RevealedVoteSummary | null;
@@ -10,7 +12,13 @@ export function ResultsSummary({ voteSummary }: ResultsSummaryProps) {
   }
 
   return (
-    <section className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-cyan-500/10 p-4 backdrop-blur-xl sm:p-5">
+    <motion.section
+      variants={slideUp}
+      initial="hidden"
+      animate="visible"
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-cyan-500/10 p-4 backdrop-blur-xl sm:p-5"
+    >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-cyan-50 sm:text-xl">
@@ -32,18 +40,29 @@ export function ResultsSummary({ voteSummary }: ResultsSummaryProps) {
       ) : (
         <>
           <ResultAlerts voteSummary={voteSummary} />
-          <div className="mt-4 grid gap-2 sm:grid-cols-3 sm:gap-3">
-            <SummaryMetric
-              label="Majority"
-              value={voteSummary.majorityValues.join(", ")}
-            />
-            <SummaryMetric label="Average" value={voteSummary.average ?? "N/A"} />
-            <SummaryMetric
-              label="Dispersion"
-              value={voteSummary.dispersion}
-              compact
-            />
-          </div>
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="mt-4 grid gap-2 sm:grid-cols-3 sm:gap-3"
+          >
+            <motion.div variants={staggerItem}>
+              <SummaryMetric
+                label="Majority"
+                value={voteSummary.majorityValues.join(", ")}
+              />
+            </motion.div>
+            <motion.div variants={staggerItem}>
+              <SummaryMetric label="Average" value={voteSummary.average ?? "N/A"} />
+            </motion.div>
+            <motion.div variants={staggerItem}>
+              <SummaryMetric
+                label="Dispersion"
+                value={voteSummary.dispersion}
+                compact
+              />
+            </motion.div>
+          </motion.div>
         </>
       )}
 
@@ -53,7 +72,7 @@ export function ResultsSummary({ voteSummary }: ResultsSummaryProps) {
           {voteSummary.nonNumericValues.join(", ")}
         </p>
       ) : null}
-    </section>
+    </motion.section>
   );
 }
 
@@ -63,25 +82,32 @@ function ResultAlerts({ voteSummary }: { voteSummary: RevealedVoteSummary }) {
   }
 
   return (
-    <div className="mt-4 grid gap-2 sm:gap-3" role="status" aria-live="polite">
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      className="mt-4 grid gap-2 sm:gap-3"
+      role="status"
+      aria-live="polite"
+    >
       {voteSummary.hasMajorityTie ? (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+        <motion.div variants={staggerItem} className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
           <p className="text-sm font-semibold text-amber-300">Tie detected</p>
           <p className="mt-1 text-xs text-amber-200/70 sm:text-sm">
             Values tied:{" "}
             {voteSummary.majorityValues.join(", ")}. Discuss before deciding.
           </p>
-        </div>
+        </motion.div>
       ) : null}
       {voteSummary.hasHighDispersion ? (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3">
+        <motion.div variants={staggerItem} className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3">
           <p className="text-sm font-semibold text-rose-300">High dispersion</p>
           <p className="mt-1 text-xs text-rose-200/70 sm:text-sm">
             {voteSummary.highDispersionReason}
           </p>
-        </div>
+        </motion.div>
       ) : null}
-    </div>
+    </motion.div>
   );
 }
 

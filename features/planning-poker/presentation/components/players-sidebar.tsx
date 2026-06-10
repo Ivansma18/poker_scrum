@@ -1,4 +1,6 @@
+import { motion } from "motion/react";
 import { getVoteForPlayer, type PlanningPokerRoom } from "../../domain/planning-poker";
+import { staggerContainer, staggerItem } from "../animation";
 import { RoundHistory } from "./round-history";
 
 type PlayersSidebarProps = {
@@ -16,13 +18,19 @@ export function PlayersSidebar({ room }: PlayersSidebarProps) {
           {room.players.length}
         </span>
       </div>
-      <div className="mt-3 flex max-h-[300px] flex-col gap-1.5 overflow-y-auto scrollbar-thin sm:mt-4 sm:gap-2 lg:max-h-[calc(100vh-320px)]">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="mt-3 flex max-h-[300px] flex-col gap-1.5 overflow-y-auto scrollbar-thin sm:mt-4 sm:gap-2 lg:max-h-[calc(100vh-320px)]"
+      >
         {room.players.map((player) => {
           const vote = getVoteForPlayer(room, player.id);
 
           return (
-            <div
+            <motion.div
               key={player.id}
+              variants={staggerItem}
               className="flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.02] px-3 py-2.5 transition-colors hover:bg-white/[0.05] sm:px-4 sm:py-3"
             >
               <div className="min-w-0 flex-1">
@@ -42,10 +50,10 @@ export function PlayersSidebar({ room }: PlayersSidebarProps) {
               >
                 {room.revealed ? vote?.value ?? "-" : vote ? "ok" : "-"}
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
       <section className="mt-6 border-t border-white/[0.06] pt-5">
         <div className="flex items-center justify-between">
@@ -59,10 +67,16 @@ export function PlayersSidebar({ room }: PlayersSidebarProps) {
             No spectators watching.
           </p>
         ) : (
-          <div className="mt-3 flex flex-col gap-1.5 sm:gap-2">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="mt-3 flex flex-col gap-1.5 sm:gap-2"
+          >
             {spectators.map((spectator) => (
-              <div
+              <motion.div
                 key={spectator.id}
+                variants={staggerItem}
                 className="rounded-xl border border-white/[0.04] bg-white/[0.02] px-3 py-2.5 sm:px-4 sm:py-3"
               >
                 <p className="truncate text-sm font-medium text-white">
@@ -71,9 +85,9 @@ export function PlayersSidebar({ room }: PlayersSidebarProps) {
                 <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-500 sm:text-xs">
                   Watching
                 </p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </section>
 

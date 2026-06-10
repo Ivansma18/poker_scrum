@@ -1,5 +1,7 @@
+import { AnimatePresence } from "motion/react";
 import type { PlanningPokerRoom, Vote, VoteValue } from "../../domain/planning-poker";
 import { FeedbackMessage } from "./feedback-message";
+import { VotingCard } from "./voting-card";
 
 type VotingDeckProps = {
   room: PlanningPokerRoom;
@@ -41,48 +43,38 @@ export function VotingDeck({
         </span>
       </div>
 
-      {votingBlockedMessage ? (
-        <div className="mt-4">
-          <FeedbackMessage tone="info" message={votingBlockedMessage} />
-        </div>
-      ) : null}
+      <AnimatePresence>
+        {votingBlockedMessage ? (
+          <div className="mt-4">
+            <FeedbackMessage tone="info" message={votingBlockedMessage} />
+          </div>
+        ) : null}
+      </AnimatePresence>
 
-      {!votingBlockedMessage && voteConfirmation && !room.revealed ? (
-        <div className="mt-4">
-          <FeedbackMessage
-            tone="info"
-            message={`Vote recorded: ${voteConfirmation.value}`}
-          />
-        </div>
-      ) : null}
+      <AnimatePresence>
+        {!votingBlockedMessage && voteConfirmation && !room.revealed ? (
+          <div className="mt-4">
+            <FeedbackMessage
+              tone="info"
+              message={`Vote recorded: ${voteConfirmation.value}`}
+            />
+          </div>
+        ) : null}
+      </AnimatePresence>
 
       <div className="mt-4 grid grid-cols-4 gap-2 min-[430px]:grid-cols-5 sm:grid-cols-5 sm:gap-2.5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6">
-        {room.deck.values.map((card) => {
+        {room.deck.values.map((card, index) => {
           const selected = currentVote?.value === card;
 
           return (
-            <button
+            <VotingCard
               key={card}
-              type="button"
+              card={card}
+              selected={selected}
               disabled={room.revealed || isSpectator}
-              onClick={() => onVote(card)}
-              className={`group relative aspect-[3/4] min-h-16 overflow-hidden rounded-xl text-lg font-bold transition-all enabled:hover:-translate-y-0.5 enabled:hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-20 sm:rounded-2xl sm:text-xl ${
-                selected
-                  ? "border-2 border-cyan-400 bg-gradient-to-b from-cyan-50 to-cyan-100 text-cyan-900 shadow-md shadow-cyan-500/20"
-                  : "border border-white/[0.08] bg-white/[0.04] text-white shadow-sm hover:border-white/[0.15] hover:bg-white/[0.08]"
-              }`}
-            >
-              <span className="relative z-10 flex items-center justify-center">
-                {card === "coffee" ? (
-                  <span className="text-base sm:text-lg">☕</span>
-                ) : (
-                  card
-                )}
-              </span>
-              {selected && (
-                <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/10 to-transparent" />
-              )}
-            </button>
+              index={index}
+              onVote={onVote}
+            />
           );
         })}
       </div>

@@ -1,4 +1,6 @@
+import { motion } from "motion/react";
 import type { PlanningPokerRoom } from "../../domain/planning-poker";
+import { staggerContainer, staggerItem } from "../animation";
 import { formatHistoryDate } from "./format-history-date";
 
 type RoundHistoryProps = {
@@ -16,10 +18,16 @@ export function RoundHistory({ room }: RoundHistoryProps) {
           Revealed rounds will appear here.
         </p>
       ) : (
-        <div className="mt-3 flex max-h-[200px] flex-col gap-1.5 overflow-y-auto scrollbar-thin sm:gap-2">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="mt-3 flex max-h-[200px] flex-col gap-1.5 overflow-y-auto scrollbar-thin sm:gap-2"
+        >
           {room.storyHistory.map((entry, index) => (
-            <div
+            <motion.div
               key={`${entry.storyName}-${index}`}
+              variants={staggerItem}
               className="rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2.5"
             >
               <p className="truncate text-sm font-medium text-white">{entry.storyName}</p>
@@ -27,9 +35,9 @@ export function RoundHistory({ room }: RoundHistoryProps) {
               <p className="mt-1 text-[10px] font-medium text-slate-600">
                 {entry.deckName} &middot; {formatHistoryDate(entry.recordedAt)}
               </p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
     </section>
   );

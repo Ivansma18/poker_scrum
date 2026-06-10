@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import type { PlanningPokerRoom } from "../../domain/planning-poker";
+import { slideDown } from "../animation";
 import {
   FacilitatorPermissionNotice,
   facilitatorPermissionMessage,
@@ -65,35 +67,45 @@ export function DeckSelector({
         </div>
       </div>
 
-      {showCustomDeck && (
-        <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end sm:gap-3">
-          <div>
-            <label className="block text-xs font-medium text-slate-400" htmlFor="custom-deck">
-              Custom deck values
-            </label>
-            <textarea
-              id="custom-deck"
-              disabled={!canUseFacilitatorActions}
-              value={customDeckDraft}
-              onChange={(event) => onCustomDeckChange(event.target.value)}
-              className="mt-2 min-h-16 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-slate-500 input-focus disabled:opacity-50 sm:min-h-20 sm:px-4 sm:py-3 sm:text-base"
-              placeholder="0, 1, 2, 3, 5, 8, ?"
-              autoFocus
-            />
-            <p className="mt-1.5 text-[10px] text-slate-500 sm:text-xs">
-              Commas or line breaks. Max 12 cards, duplicates removed.
-            </p>
-          </div>
-          <button
-            type="button"
-            disabled={!canApplyCustomDeck || !canUseFacilitatorActions}
-            onClick={onApplyCustomDeck}
-            className="w-full rounded-xl bg-gradient-to-r from-cyan-400 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-cyan-950 transition-all hover:from-cyan-300 hover:to-cyan-400 disabled:cursor-not-allowed disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-400 sm:w-auto sm:px-5 sm:py-3 touch-target"
+      <AnimatePresence>
+        {showCustomDeck ? (
+          <motion.div
+            key="custom-deck-panel"
+            variants={slideDown}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end sm:gap-3"
           >
-            Apply custom
-          </button>
-        </div>
-      )}
+            <div>
+              <label className="block text-xs font-medium text-slate-400" htmlFor="custom-deck">
+                Custom deck values
+              </label>
+              <textarea
+                id="custom-deck"
+                disabled={!canUseFacilitatorActions}
+                value={customDeckDraft}
+                onChange={(event) => onCustomDeckChange(event.target.value)}
+                className="mt-2 min-h-16 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-slate-500 input-focus disabled:opacity-50 sm:min-h-20 sm:px-4 sm:py-3 sm:text-base"
+                placeholder="0, 1, 2, 3, 5, 8, ?"
+                autoFocus
+              />
+              <p className="mt-1.5 text-[10px] text-slate-500 sm:text-xs">
+                Commas or line breaks. Max 12 cards, duplicates removed.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={!canApplyCustomDeck || !canUseFacilitatorActions}
+              onClick={onApplyCustomDeck}
+              className="w-full rounded-xl bg-gradient-to-r from-cyan-400 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-cyan-950 transition-all hover:from-cyan-300 hover:to-cyan-400 disabled:cursor-not-allowed disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-400 sm:w-auto sm:px-5 sm:py-3 touch-target"
+            >
+              Apply custom
+            </button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
       <FacilitatorPermissionNotice
         canUseFacilitatorActions={canUseFacilitatorActions}
       />
@@ -113,10 +125,11 @@ function PresetDeckButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <motion.button
       type="button"
       disabled={disabled}
       onClick={onClick}
+      whileTap={{ scale: 0.96 }}
       className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all touch-target sm:px-4 sm:text-sm ${
         active
           ? "bg-white text-slate-950 shadow-sm"
@@ -125,6 +138,6 @@ function PresetDeckButton({
       title={disabled ? facilitatorPermissionMessage : undefined}
     >
       {label}
-    </button>
+    </motion.button>
   );
 }
