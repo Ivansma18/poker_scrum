@@ -30,6 +30,7 @@ type PlanningPokerRoomViewProps = {
   isLeaveRoomDialogOpen: boolean;
   canUseFacilitatorActions: boolean;
   currentVote?: Vote;
+  voteConfirmation: { value: string } | null;
   voteSummary: RevealedVoteSummary | null;
   customDeckDraft: string;
   canApplyCustomDeck: boolean;
@@ -67,6 +68,7 @@ export function PlanningPokerRoomView({
   isLeaveRoomDialogOpen,
   canUseFacilitatorActions,
   currentVote,
+  voteConfirmation,
   voteSummary,
   customDeckDraft,
   canApplyCustomDeck,
@@ -202,6 +204,7 @@ export function PlanningPokerRoomView({
               <VotingDeck
                 room={room}
                 currentVote={currentVote}
+                voteConfirmation={voteConfirmation}
                 isSpectator={isSpectator}
                 onVote={onVote}
               />

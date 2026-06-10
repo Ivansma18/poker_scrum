@@ -16,6 +16,7 @@ import {
   summarizeRevealedVotes,
   type PlanningPokerRole,
   type PlanningPokerRoom,
+  type VoteValue,
 } from "../../domain/planning-poker";
 import {
   clearLocalPlanningPokerState,
@@ -218,6 +219,15 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
     setInviteCopied,
   });
 
+  function handleVote(value: VoteValue) {
+    roomActions.vote(value);
+  }
+
+  const voteConfirmation =
+    currentVote && !room?.revealed
+      ? { value: currentVote.value }
+      : null;
+
   return {
     entry: {
       entryMode,
@@ -245,6 +255,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
           isLeaveRoomDialogOpen,
           canUseFacilitatorActions,
           currentVote,
+          voteConfirmation,
           voteSummary,
           customDeckDraft,
           canApplyCustomDeck,
@@ -258,7 +269,7 @@ export function usePlanningPokerBoard(initialRoomCode = "") {
           setPendingStoriesInput,
           setIsLeaveRoomDialogOpen,
           onCopyInviteLink: roomActions.copyInviteLink,
-          onVote: roomActions.vote,
+          onVote: handleVote,
           onSelectPresetDeck: roomActions.selectPresetDeck,
           onApplyCustomDeck: roomActions.applyCustomDeck,
           onApplyStory: roomActions.applyStory,

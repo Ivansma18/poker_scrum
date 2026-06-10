@@ -4,6 +4,7 @@ import { FeedbackMessage } from "./feedback-message";
 type VotingDeckProps = {
   room: PlanningPokerRoom;
   currentVote?: Vote;
+  voteConfirmation: { value: string } | null;
   isSpectator: boolean;
   onVote: (value: VoteValue) => void;
 };
@@ -11,6 +12,7 @@ type VotingDeckProps = {
 export function VotingDeck({
   room,
   currentVote,
+  voteConfirmation,
   isSpectator,
   onVote,
 }: VotingDeckProps) {
@@ -42,6 +44,15 @@ export function VotingDeck({
       {votingBlockedMessage ? (
         <div className="mt-4">
           <FeedbackMessage tone="info" message={votingBlockedMessage} />
+        </div>
+      ) : null}
+
+      {!votingBlockedMessage && voteConfirmation && !room.revealed ? (
+        <div className="mt-4">
+          <FeedbackMessage
+            tone="info"
+            message={`Vote recorded: ${voteConfirmation.value}`}
+          />
         </div>
       ) : null}
 

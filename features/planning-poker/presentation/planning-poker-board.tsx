@@ -48,6 +48,7 @@ export function PlanningPokerBoard({
       isLeaveRoomDialogOpen={session.isLeaveRoomDialogOpen}
       canUseFacilitatorActions={session.canUseFacilitatorActions}
       currentVote={session.currentVote}
+      voteConfirmation={session.voteConfirmation}
       voteSummary={session.voteSummary}
       customDeckDraft={session.customDeckDraft}
       canApplyCustomDeck={session.canApplyCustomDeck}
